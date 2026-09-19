@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static jdk.vm.ci.code.Register.None;
+
 @Service
 @RequiredArgsConstructor
 public class CategoryService {
@@ -29,12 +31,12 @@ public class CategoryService {
     }
 
     public CategoryResponse deleteCategory(Long id){
-        Optional<Category> found = categoryRepository.findByActiveTrue(id);
-        if (category.isActive() == true) {
-            category.setActive == false;
+        Category found = categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found."));
+        if (found.isActive()){
+            found.setActive(false);
         }
 
-
+        return ;
     }
 
 
