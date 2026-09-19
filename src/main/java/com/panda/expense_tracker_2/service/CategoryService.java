@@ -35,8 +35,8 @@ public class CategoryService {
         if (found.isActive()){
             found.setActive(false);
         }
-
-        return ;
+        Category saved =  categoryRepository.save(found);
+        return new CategoryResponse(saved.getId(), saved.getName());
     }
 
 
