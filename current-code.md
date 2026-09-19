@@ -1,0 +1,212 @@
+# Expense Tracker T2 — Current Code
+
+## Category.java
+
+`src/main/java/com/panda/expense_tracker_2/model/Category.java`
+
+```java
+package com.panda.expense_tracker_2.model;
+
+import jakarta.persistence.*;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "Category")
+@NoArgsConstructor
+public class Category {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String name;
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    @Column
+    private boolean active = true;
+
+    public Category(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+}
+```
+
+## CategoryRepository.java
+
+`src/main/java/com/panda/expense_tracker_2/repository/CategoryRepository.java`
+
+```java
+package com.panda.expense_tracker_2.repository;
+
+import com.panda.expense_tracker_2.model.Category;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface CategoryRepository  extends JpaRepository<Category, Long> {
+    public List<Category> findByActiveTrue();
+}
+```
+
+## CategoryService.java
+
+`src/main/java/com/panda/expense_tracker_2/service/CategoryService.java`
+
+```java
+package com.panda.expense_tracker_2.service;
+
+import com.panda.expense_tracker_2.dto.CategoryRequest;
+import com.panda.expense_tracker_2.dto.CategoryResponse;
+import com.panda.expense_tracker_2.model.Category;
+import com.panda.expense_tracker_2.repository.CategoryRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class CategoryService {
+    final CategoryRepository categoryRepository;
+
+    public CategoryResponse createCategory(CategoryRequest request){
+        Category saved = categoryRepository.save(new Category(request.getName()));
+        return  new CategoryResponse(saved.getId(),saved.getName());
+    }
+
+    public List<CategoryResponse> listCategories(){
+        List<Category> categories = categoryRepository.findByActiveTrue();
+        return categories.stream()
+                .map(category -> new CategoryResponse(category.getId(), category.getName()))
+                .collect(Collectors.toList());
+    }
+
+    public CategoryResponse deleteCategory(Long id){
+        Optional<Category> category = categoryRepository.findById(id);
+        if category.isActive() = true; {
+            category.setActive = false;
+        }
+
+
+    }
+
+
+
+}
+```
+
+## CategoryRequest.java
+
+`src/main/java/com/panda/expense_tracker_2/dto/CategoryRequest.java`
+
+```java
+package com.panda.expense_tracker_2.dto;
+
+import lombok.Data;
+
+@Data
+public class CategoryRequest {
+    private Long id;
+
+    private String name;
+}
+```
+
+## CategoryResponse.java
+
+`src/main/java/com/panda/expense_tracker_2/dto/CategoryResponse.java`
+
+```java
+package com.panda.expense_tracker_2.dto;
+
+import lombok.Data;
+
+@Data
+public class CategoryResponse {
+    private Long id;
+
+    private String name;
+
+    public CategoryResponse(Long id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+}
+```
+
+## Income.java
+
+`src/main/java/com/panda/expense_tracker_2/model/Income.java`
+
+```java
+package com.panda.expense_tracker_2.model;
+
+public class Income {
+}
+```
+
+## ExpenseTrackerT2Application.java
+
+`src/main/java/com/panda/expense_tracker_2/ExpenseTrackerT2Application.java`
+
+```java
+package com.panda.expense_tracker_2;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class ExpenseTrackerT2Application {
+
+    public static void main(String[] args) {
+        SpringApplication.run(ExpenseTrackerT2Application.class, args);
+    }
+
+}
+```
+
+## ExpenseTrackerT2ApplicationTests.java
+
+`src/test/java/com/panda/expense_tracker_2/ExpenseTrackerT2ApplicationTests.java`
+
+```java
+package com.panda.expense_tracker_2;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class ExpenseTrackerT2ApplicationTests {
+
+    @Test
+    void contextLoads() {
+    }
+
+}
+```

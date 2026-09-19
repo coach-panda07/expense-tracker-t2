@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -19,5 +21,22 @@ public class CategoryService {
         return  new CategoryResponse(saved.getId(),saved.getName());
     }
 
-    public List<CategoryResponse> listCategories()
+    public List<CategoryResponse> listCategories(){
+        List<Category> categories = categoryRepository.findByActiveTrue();
+        return categories.stream()
+                .map(category -> new CategoryResponse(category.getId(), category.getName()))
+                .collect(Collectors.toList());
+    }
+
+    public CategoryResponse deleteCategory(Long id){
+        Optional<Category> found = categoryRepository.findByActiveTrue(id);
+        if (category.isActive() == true) {
+            category.setActive == false;
+        }
+
+
+    }
+
+
+
 }
