@@ -1,5 +1,7 @@
 # Expense Tracker T2 — Current Code
 
+Snapshot synced to latest Category files.
+
 ## Category.java
 
 `src/main/java/com/panda/expense_tracker_2/model/Category.java`
@@ -51,6 +53,65 @@ public class Category {
 
     public void setId(Long id) {
         this.id = id;
+    }
+}
+```
+
+## Income.java
+
+`src/main/java/com/panda/expense_tracker_2/model/Income.java`
+
+```java
+package com.panda.expense_tracker_2.model;
+
+import jakarta.persistence.*;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "Income")
+@NoArgsConstructor
+public class Income {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private Double cost;
+
+    @Column(nullable = false)
+    private Category category;
+
+    public  String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Double getCost() {
+        return cost;
+    }
+
+    public void setCost(Double cost) {
+        this.cost = cost;
+    }
+
+    public Income(String name, Double cost, Category category) {
+        this.name = name;
+        this.cost = cost;
+        this.category = category;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
     }
 }
 ```
@@ -126,7 +187,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -154,17 +214,55 @@ public class CategoryService {
         Category saved =  categoryRepository.save(found);
         return new CategoryResponse(saved.getId(), saved.getName());
     }
+
+
 }
 ```
 
-## Income.java
+## CategoryController.java
 
-`src/main/java/com/panda/expense_tracker_2/model/Income.java`
+`src/main/java/com/panda/expense_tracker_2/controller/CategoryController.java`
 
 ```java
-package com.panda.expense_tracker_2.model;
+package com.panda.expense_tracker_2.controller;
 
-public class Income {
+import com.panda.expense_tracker_2.dto.CategoryRequest;
+import com.panda.expense_tracker_2.dto.CategoryResponse;
+import com.panda.expense_tracker_2.service.CategoryService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RequiredArgsConstructor
+@RestController
+public class CategoryController {
+    private final CategoryService categoryService;
+
+
+    @PostMapping("/categories")
+    public ResponseEntity<CategoryResponse> createCategory(
+            @Valid @RequestBody
+            CategoryRequest categoryRequest
+
+    ){
+        return new ResponseEntity<>(categoryService.createCategory(categoryRequest),
+                HttpStatus.CREATED);
+    }
+
+    @GetMapping("/categories")
+    public ResponseEntity<List<CategoryResponse>> getCategory(){
+        return  new ResponseEntity<>(categoryService.listCategories(), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/categories/{id}")
+
+    public ResponseEntity<CategoryResponse> deleteCategory(@PathVariable Long id){
+        return  new ResponseEntity<>(categoryService.deleteCategory(id), HttpStatus.OK);
+    }
 }
 ```
 
@@ -204,6 +302,137 @@ class ExpenseTrackerT2ApplicationTests {
     @Test
     void contextLoads() {
     }
+
+}
+```
+
+## Logbook.java
+
+`src/main/java/com/panda/expense_tracker_2/model/Logbook.java`
+
+```java
+package com.panda.expense_tracker_2.model;
+
+import jakarta.persistence.*;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "Log_Book")
+@NoArgsConstructor
+public class Logbook {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String name;
+
+    public Logbook(String name) {
+        this.name = name;
+
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+}
+```
+
+## LogbookRequest.java
+
+`src/main/java/com/panda/expense_tracker_2/dto/LogbookRequest.java`
+
+```java
+package com.panda.expense_tracker_2.dto;
+
+import lombok.Data;
+
+@Data
+public class LogbookRequest {
+    private Long id;
+    private String name;
+}
+```
+
+## LogbookResponse.java
+
+`src/main/java/com/panda/expense_tracker_2/dto/LogbookResponse.java`
+
+```java
+package com.panda.expense_tracker_2.dto;
+
+public class LogbookResponse {
+    private Long id;
+    private String name;
+
+    public LogbookResponse(Long id, String name){
+        this.name = name;
+        this.id = id;
+    }
+
+}
+```
+
+## LogbookRepositiory.java
+
+`src/main/java/com/panda/expense_tracker_2/repository/LogbookRepositiory.java`
+
+```java
+package com.panda.expense_tracker_2.repository;
+
+import com.panda.expense_tracker_2.model.Logbook;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface LogbookRepositiory extends JpaRepository<Logbook, Long> {
+
+}
+```
+
+## LogbookService.java
+
+`src/main/java/com/panda/expense_tracker_2/service/LogbookService.java`
+
+```java
+package com.panda.expense_tracker_2.service;
+
+import com.panda.expense_tracker_2.dto.CategoryResponse;
+import com.panda.expense_tracker_2.dto.LogbookRequest;
+import com.panda.expense_tracker_2.dto.LogbookResponse;
+import com.panda.expense_tracker_2.model.Category;
+import com.panda.expense_tracker_2.model.Logbook;
+import com.panda.expense_tracker_2.repository.LogbookRepositiory;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class LogbookService {
+    private final LogbookRepositiory logbookRepositiory;
+
+public LogbookResponse createLogbook(LogbookRequest request){
+    Logbook saved = logbookRepositiory.save(new Logbook(request.getName()));
+    return new LogbookResponse(saved.getId(), saved.getName());
+}
+
+public LogbookResponse deleteLogbook(Long id){
+    Logbook found = logbookRepositiory.findById(id).orElseThrow(() -> new RuntimeException("Item not found"));
+    logbookRepositiory.delete(found);
+    return new LogbookResponse(found.getId(), found.getName());
+
+}
 
 }
 ```

@@ -8,10 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static jdk.vm.ci.code.Register.None;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +36,7 @@ public class CategoryService {
         Category saved =  categoryRepository.save(found);
         return new CategoryResponse(saved.getId(), saved.getName());
     }
+
 
 
 
