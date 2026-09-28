@@ -30,9 +30,7 @@ public class CategoryService {
 
     public CategoryResponse deleteCategory(Long id){
         Category found = categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found."));
-        if (found.isActive()){
-            found.setActive(false);
-        }
+        found.setActive(false);
         Category saved =  categoryRepository.save(found);
         return new CategoryResponse(saved.getId(), saved.getName());
     }
