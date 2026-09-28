@@ -208,9 +208,7 @@ public class CategoryService {
 
     public CategoryResponse deleteCategory(Long id){
         Category found = categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found."));
-        if (found.isActive()){
-            found.setActive(false);
-        }
+        found.setActive(false);
         Category saved =  categoryRepository.save(found);
         return new CategoryResponse(saved.getId(), saved.getName());
     }
@@ -374,6 +372,9 @@ public class LogbookRequest {
 ```java
 package com.panda.expense_tracker_2.dto;
 
+import lombok.Data;
+
+@Data
 public class LogbookResponse {
     private Long id;
     private String name;
@@ -386,9 +387,9 @@ public class LogbookResponse {
 }
 ```
 
-## LogbookRepositiory.java
+## LogbookRepository.java
 
-`src/main/java/com/panda/expense_tracker_2/repository/LogbookRepositiory.java`
+`src/main/java/com/panda/expense_tracker_2/repository/LogbookRepository.java`
 
 ```java
 package com.panda.expense_tracker_2.repository;
@@ -396,7 +397,7 @@ package com.panda.expense_tracker_2.repository;
 import com.panda.expense_tracker_2.model.Logbook;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface LogbookRepositiory extends JpaRepository<Logbook, Long> {
+public interface LogbookRepository extends JpaRepository<Logbook, Long> {
 
 }
 ```
@@ -408,31 +409,31 @@ public interface LogbookRepositiory extends JpaRepository<Logbook, Long> {
 ```java
 package com.panda.expense_tracker_2.service;
 
-import com.panda.expense_tracker_2.dto.CategoryResponse;
 import com.panda.expense_tracker_2.dto.LogbookRequest;
 import com.panda.expense_tracker_2.dto.LogbookResponse;
-import com.panda.expense_tracker_2.model.Category;
 import com.panda.expense_tracker_2.model.Logbook;
-import com.panda.expense_tracker_2.repository.LogbookRepositiory;
+import com.panda.expense_tracker_2.repository.LogbookRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
 public class LogbookService {
-    private final LogbookRepositiory logbookRepositiory;
+    private final LogbookRepository logbookRepository;
 
-public LogbookResponse createLogbook(LogbookRequest request){
-    Logbook saved = logbookRepositiory.save(new Logbook(request.getName()));
-    return new LogbookResponse(saved.getId(), saved.getName());
-}
+    public LogbookResponse createLogbook(LogbookRequest request){
+        Logbook saved = logbookRepository.save(new Logbook(request.getName()));
+        return new LogbookResponse(saved.getId(), saved.getName());
+    }
 
-public LogbookResponse deleteLogbook(Long id){
-    Logbook found = logbookRepositiory.findById(id).orElseThrow(() -> new RuntimeException("Item not found"));
-    logbookRepositiory.delete(found);
-    return new LogbookResponse(found.getId(), found.getName());
+    public LogbookResponse deleteLogbook(Long id){
+        Logbook found = logbookRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        logbookRepository.delete(found);
+        return new LogbookResponse(found.getId(), found.getName());
 
-}
+    }
 
 }
 ```
