@@ -11,6 +11,8 @@
    the existing commit message style: short imperative sentence, e.g.
    `Fix deleteLogbook return type and sync current-code.md with Logbook files`.
    Never commit secrets, never force-push, never amend unless asked.
+3a. **Always push after committing.** Follow every commit with `git push` so
+   `origin/main` never falls behind local `main`. Fast-forward only, never force.
 4. **Keep `current-code.md` current.** After code changes land, update
    `current-code.md` (repo root) so it reflects the current state of the source files.
    Include the new commit in the same git commit as the code change.
