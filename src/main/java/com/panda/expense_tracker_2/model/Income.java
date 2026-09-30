@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "Income")
@@ -14,31 +15,44 @@ public class Income {
     private Long id;
 
     @Column(nullable = false)
-    private String name;
+    private LocalDate date;
 
     @Column(nullable = false)
-    private BigDecimal cost;
+    private BigDecimal amount;
+
+    @OneToOne
+    @JoinColumn(name = "logbook_id", nullable = false)
+    private Logbook logbook;
 
 
-    public  String getName() {
-        return name;
+    public  LocalDate getDate() {
+        return date;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setDate(LocalDate date) {
+        this.date = date;
     }
 
-    public BigDecimal getCost() {
-        return cost;
+    public BigDecimal getAmount() {
+        return amount;
     }
 
-    public void setCost(BigDecimal cost) {
-        this.cost = cost;
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
     }
 
-    public Income(String name, BigDecimal cost, Category category) {
-        this.name = name;
-        this.cost = cost;
+    public Long getId() { return id;}
+
+    public void setId(Long id) { this.id = id; }
+
+    public Logbook getLogbook() { return logbook; }
+
+    public void setLogbook(Logbook logbook) { this.logbook = logbook; }
+
+    public Income(LocalDate date, BigDecimal amount, Logbook logbook) {
+        this.date = date;
+        this.amount = amount;
+        this.logbook = logbook;
     }
 
 }
