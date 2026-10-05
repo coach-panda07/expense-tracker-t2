@@ -30,7 +30,7 @@ public class LogbookController {
 
     @GetMapping("/logbooks")
     public ResponseEntity<List<LogbookResponse>> getLogbook(){
-        return new ResponseEntity<>(logbookService.listLogbook(),
+        return new ResponseEntity<>(logbookService.listLogbooks(),
                 HttpStatus.OK);
     }
 

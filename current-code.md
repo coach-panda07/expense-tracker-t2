@@ -1,6 +1,6 @@
 # Expense Tracker T2 — Current Code
 
-Snapshot synced to latest Income, IncomeRepository, IncomeRequest, LogbookController, and LogbookService files.
+Snapshot synced to latest Income, Logbook, LogbookRequest, LogbookResponse, LogbookService, and LogbookController files.
 
 ## Category.java
 
@@ -81,7 +81,7 @@ public class Income {
     @Column(nullable = false)
     private LocalDate date;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
 
     @OneToOne
@@ -373,6 +373,9 @@ public class Logbook {
     @Column(nullable = false)
     private String name;
 
+    @OneToOne(mappedBy = "logbook", cascade = CascadeType.REMOVE)
+    private Income income;
+
     public Logbook(String name) {
         this.name = name;
 
@@ -405,10 +408,15 @@ package com.panda.expense_tracker_2.dto;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
 @Data
 public class LogbookRequest {
     private Long id;
     private String name;
+    private BigDecimal incomeAmount;
+    private LocalDate incomeDate;
 }
 ```
 
@@ -421,14 +429,21 @@ package com.panda.expense_tracker_2.dto;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
 @Data
 public class LogbookResponse {
     private Long id;
     private String name;
+    private BigDecimal incomeAmount;
+    private LocalDate incomeDate;
 
-    public LogbookResponse(Long id, String name){
+    public LogbookResponse(Long id, String name, BigDecimal incomeAmount, LocalDate incomeDate){
         this.name = name;
         this.id = id;
+        this.incomeAmount = incomeAmount;
+        this.incomeDate = incomeDate;
     }
 
 }
@@ -458,37 +473,48 @@ package com.panda.expense_tracker_2.service;
 
 import com.panda.expense_tracker_2.dto.LogbookRequest;
 import com.panda.expense_tracker_2.dto.LogbookResponse;
+import com.panda.expense_tracker_2.model.Income;
 import com.panda.expense_tracker_2.model.Logbook;
+import com.panda.expense_tracker_2.repository.IncomeRepository;
 import com.panda.expense_tracker_2.repository.LogbookRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 @Service
 @RequiredArgsConstructor
 public class LogbookService {
     private final LogbookRepository logbookRepository;
+    private final IncomeRepository incomeRepository;
 
+
+    @Transactional
     public LogbookResponse createLogbook(LogbookRequest request){
         Logbook saved = logbookRepository.save(new Logbook(request.getName()));
-        return new LogbookResponse(saved.getId(), saved.getName());
+        incomeRepository.save(new Income(request.getIncomeDate(), request.getIncomeAmount(), saved));
+        return new LogbookResponse(saved.getId(), saved.getName(), request.getIncomeAmount(), request.getIncomeDate());
     }
+
 
     public LogbookResponse deleteLogbook(Long id){
         Logbook found = logbookRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Logbook not found "));
+        Income income = incomeRepository.findByLogbookId(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Income not found"));
         logbookRepository.delete(found);
-        return new LogbookResponse(found.getId(), found.getName());
+        return new LogbookResponse(found.getId(), found.getName(), income.getAmount(), income.getDate());
     }
 
-    public List<LogbookResponse> listLogbook(){
-        List<Logbook> logbooks = logbookRepository.findAll();
-        return logbooks.stream()
-                .map(logbook -> new LogbookResponse(logbook.getId(),logbook.getName()))
-                .collect(Collectors.toList());
+    public List<LogbookResponse> listLogbooks() {
+        return logbookRepository.findAll().stream().map(l -> {
+            Income i = incomeRepository.findByLogbookId(l.getId()).orElse(null);
+            return new LogbookResponse(l.getId(), l.getName(),
+                    i == null ? null : i.getAmount(),
+                    i == null ? null : i.getDate());
+        }).toList();
     }
 
 }
@@ -519,7 +545,7 @@ import java.util.List;
 public class LogbookController {
     private final LogbookService logbookService;
 
-    @PostMapping("/logbook")
+    @PostMapping("/logbooks")
     public ResponseEntity<LogbookResponse> createLogbook(
             @Valid
             @RequestBody
@@ -529,13 +555,13 @@ public class LogbookController {
                 HttpStatus.CREATED);
     }
 
-    @GetMapping("/list_logbooks")
+    @GetMapping("/logbooks")
     public ResponseEntity<List<LogbookResponse>> getLogbook(){
-        return new ResponseEntity<>(logbookService.listLogbook(),
+        return new ResponseEntity<>(logbookService.listLogbooks(),
                 HttpStatus.OK);
     }
 
-    @DeleteMapping("/logbook/{id}")
+    @DeleteMapping("/logbooks/{id}")
     public ResponseEntity<LogbookResponse> deleteLogbook(@PathVariable Long id){
         return new ResponseEntity<LogbookResponse>(logbookService.deleteLogbook(id),
                 HttpStatus.OK);

@@ -15,6 +15,9 @@ public class Logbook {
     @Column(nullable = false)
     private String name;
 
+    @OneToOne(mappedBy = "logbook", cascade = CascadeType.REMOVE)
+    private Income income;
+
     public Logbook(String name) {
         this.name = name;
 

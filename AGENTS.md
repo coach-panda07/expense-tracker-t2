@@ -28,14 +28,15 @@ Issues live in GitHub (`gh issue list`). Keep this section in sync.
 
 - #1 Rewrite Income to match the design
 - #6 LogbookController and list endpoint
+- #5 Require income at logbook creation
 
 ### Current issue
 
-- #5 Require income at logbook creation (in progress)
+- #3 Expense entity and repository
 
 ### Next issue
 
-- #3 Expense entity and repository (then #4 Logbook relationships and cascade delete)
+- #4 Logbook relationships and cascade delete
 
 ### Remaining, in build order
 
