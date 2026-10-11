@@ -3,6 +3,8 @@ package com.panda.expense_tracker_2.model;
 import jakarta.persistence.*;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Entity
 @Table(name = "Log_Book")
 @NoArgsConstructor
@@ -17,6 +19,9 @@ public class Logbook {
 
     @OneToOne(mappedBy = "logbook", cascade = CascadeType.REMOVE)
     private Income income;
+
+    @OneToMany(mappedBy = "logbook", cascade = CascadeType.REMOVE)
+    private List<Expense> expense;
 
     public Logbook(String name) {
         this.name = name;

@@ -1,6 +1,6 @@
 # Expense Tracker T2 — Current Code
 
-Snapshot synced to latest Income, Logbook, LogbookRequest, LogbookResponse, LogbookService, and LogbookController files.
+Snapshot synced to latest Income, Expense, Logbook, DTO, and controller files.
 
 ## Category.java
 
@@ -122,6 +122,80 @@ public class Income {
 }
 ```
 
+## Expense.java
+
+`src/main/java/com/panda/expense_tracker_2/model/Expense.java`
+
+```java
+package com.panda.expense_tracker_2.model;
+
+import jakarta.persistence.*;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "Expense")
+@NoArgsConstructor
+public class Expense {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal cost;
+
+    @Column(nullable = false)
+    private LocalDate date;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "logbook_id")
+    private Logbook logbook;
+
+
+    public Long getId() { return id; }
+
+    public void setId(Long id) { this.id = id; }
+
+    public String getName() { return name; }
+
+    public void setName(String name) { this.name = name; }
+
+    public BigDecimal getCost() { return cost; }
+
+    public void setCost(BigDecimal cost) { this.cost = cost; }
+
+    public LocalDate getDate() { return date; }
+
+    public void setDate(LocalDate date) { this.date = date; }
+
+    public Category getCategory() { return category; }
+
+    public void setCategory(Category category) { this.category = category; }
+
+    public Logbook getLogbook() { return logbook; }
+
+    public void setLogbook(Logbook logbook) { this.logbook = logbook; }
+
+    public Expense(String name, BigDecimal cost, LocalDate date, Category category, Logbook logbook) {
+        this.name = name;
+        this.cost = cost;
+        this.date = date;
+        this.category = category;
+        this.logbook = logbook;
+    }
+
+}
+```
+
 ## IncomeRequest.java
 
 `src/main/java/com/panda/expense_tracker_2/dto/IncomeRequest.java`
@@ -146,6 +220,30 @@ public class IncomeRequest {
 }
 ```
 
+## ExpenseRequestDto.java
+
+`src/main/java/com/panda/expense_tracker_2/dto/ExpenseRequestDto.java`
+
+```java
+package com.panda.expense_tracker_2.dto;
+
+import com.panda.expense_tracker_2.model.Category;
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Data
+public class ExpenseRequestDto {
+    private Long id;
+    private String name;
+    private BigDecimal cost;
+    private LocalDate date;
+    private Long categoryId;
+    private Long logbookId;
+}
+```
+
 ## IncomeRepository.java
 
 `src/main/java/com/panda/expense_tracker_2/repository/IncomeRepository.java`
@@ -160,6 +258,29 @@ import java.util.Optional;
 
 public interface IncomeRepository extends JpaRepository<Income, Long> {
     public Optional<Income> findByLogbookId(Long id);
+}
+```
+
+## ExpenseRepository.java
+
+`src/main/java/com/panda/expense_tracker_2/repository/ExpenseRepository.java`
+
+```java
+package com.panda.expense_tracker_2.repository;
+
+import com.panda.expense_tracker_2.model.Expense;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+public interface ExpenseRepository extends JpaRepository<Expense, Long> {
+    public List<Expense> findByLogbookId(Long logbookId);
+
+    @Query("SELECT COALESCE(SUM(e.cost), 0) FROM Expense e WHERE e.logbook.id = :logbookId")
+    public BigDecimal sumCostByLogbookId(@Param("logbookId") Long logbookId);
 }
 ```
 
@@ -361,6 +482,8 @@ package com.panda.expense_tracker_2.model;
 import jakarta.persistence.*;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Entity
 @Table(name = "Log_Book")
 @NoArgsConstructor
@@ -375,6 +498,9 @@ public class Logbook {
 
     @OneToOne(mappedBy = "logbook", cascade = CascadeType.REMOVE)
     private Income income;
+
+    @OneToMany(mappedBy = "logbook", cascade = CascadeType.REMOVE)
+    private List<Expense> expense;
 
     public Logbook(String name) {
         this.name = name;
