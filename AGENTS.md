@@ -19,6 +19,8 @@
 5. **Track issue progress here.** Work the GitHub issues in order. When an issue is
    closed (`gh issue close <n>`), note it under "Closed issues" below and set the next
    open issue under "Current issue". Never leave a closed issue unrecorded.
+6. **Read project files individually.** When asked to read the project, go through each
+   file one by one with the Read tool rather than relying on glob/grep summaries.
 
 ## Issue tracker
 
