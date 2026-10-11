@@ -33,18 +33,18 @@ Issues live in GitHub (`gh issue list`). Keep this section in sync.
 - #5 Require income at logbook creation
 - #3 Expense entity and repository
 - #4 Logbook relationships and cascade delete
+- #2 Decision: BigDecimal money type for Income and Expense
 
 ### Current issue
 
-- #2 Decision: BigDecimal money type for Income and Expense
+- #7 Expense service, DTOs, and controller
 
 ### Next issue
 
-- #7 Expense service, DTOs, and controller
+- #8 Summary endpoint and math
 
 ### Remaining, in build order
 
-- #8 Summary endpoint and math
 - #9 Decision: open design questions
 - #10 Validation: starter dependency and constraints
 - #11 Consistent error handling
