@@ -629,9 +629,11 @@ public class LogbookService {
 
     public LogbookResponse deleteLogbook(Long id){
         Logbook found = logbookRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Logbook not found "));
-        Income income = incomeRepository.findByLogbookId(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Income not found"));
+        Income income = incomeRepository.findByLogbookId(id).orElse(null);
         logbookRepository.delete(found);
-        return new LogbookResponse(found.getId(), found.getName(), income.getAmount(), income.getDate());
+        return new LogbookResponse(found.getId(), found.getName(),
+                income == null ? null : income.getAmount(),
+                income == null ? null : income.getDate());
     }
 
     public List<LogbookResponse> listLogbooks() {
