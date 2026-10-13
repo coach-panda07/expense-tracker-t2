@@ -8,10 +8,8 @@ import java.time.LocalDate;
 
 @Data
 public class ExpenseRequestDto {
-    private Long id;
     private String name;
     private BigDecimal cost;
     private LocalDate date;
     private Long categoryId;
-    private Long logbookId;
 }

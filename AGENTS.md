@@ -55,3 +55,4 @@ Issues live in GitHub (`gh issue list`). Keep this section in sync.
 
 - Java / Spring Boot expense tracker, Maven, package root `com.panda.expense_tracker_2`.
 - See `current-code.md` for the code snapshot.
+- When you need to read my code, read it manually. Do not use grep, glob, or other automated tools to summarize files. Use the Read tool to open each file individually.
