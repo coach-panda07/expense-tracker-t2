@@ -21,6 +21,8 @@
    open issue under "Current issue". Never leave a closed issue unrecorded.
 6. **Read project files individually.** When asked to read the project, go through each
    file one by one with the Read tool rather than relying on glob/grep summaries.
+   Never use `current-code.md` as a source of truth — it can be stale. Always read the
+   actual source files on disk.
 
 ## Issue tracker
 
