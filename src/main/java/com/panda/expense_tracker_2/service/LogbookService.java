@@ -35,8 +35,8 @@ public class LogbookService {
         Income income = incomeRepository.findByLogbookId(id).orElse(null);
         logbookRepository.delete(found);
         return new LogbookResponse(found.getId(), found.getName(),
-                income == null ? null :income.getAmount(), 
-                income == null ? null :income.getDate());
+                income == null ? null : income.getAmount(),
+                income == null ? null : income.getDate());
     }
 
     public List<LogbookResponse> listLogbooks() {

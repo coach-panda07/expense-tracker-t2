@@ -1,13 +1,14 @@
 package com.panda.expense_tracker_2.dto;
 
 import com.panda.expense_tracker_2.model.Category;
+import com.panda.expense_tracker_2.model.Logbook;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
-public class ExpenseRequestDto {
+public class ExpenseRequest {
     private String name;
     private BigDecimal cost;
     private LocalDate date;
