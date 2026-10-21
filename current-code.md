@@ -203,6 +203,8 @@ public class Expense {
 ```java
 package com.panda.expense_tracker_2.dto;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -211,8 +213,8 @@ import java.time.LocalDate;
 @Data
 public class IncomeRequest {
 
-    private Long id;
-
+    @NotNull
+    @Positive
     private BigDecimal amount;
 
     private LocalDate date;
@@ -229,6 +231,8 @@ package com.panda.expense_tracker_2.dto;
 
 import com.panda.expense_tracker_2.model.Category;
 import com.panda.expense_tracker_2.model.Logbook;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
@@ -237,9 +241,13 @@ import java.time.LocalDate;
 
 @Data
 public class ExpenseRequest {
+    @NotBlank
     private String name;
+
     @Positive
+    @NotNull
     private BigDecimal cost;
+
     private LocalDate date;
     private Long categoryId;
 }
@@ -342,12 +350,13 @@ public interface CategoryRepository  extends JpaRepository<Category, Long> {
 ```java
 package com.panda.expense_tracker_2.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
 public class CategoryRequest {
-    private Long id;
 
+    @NotBlank
     private String name;
 }
 ```
@@ -704,6 +713,9 @@ public class Logbook {
 ```java
 package com.panda.expense_tracker_2.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -711,8 +723,12 @@ import java.time.LocalDate;
 
 @Data
 public class LogbookRequest {
-    private Long id;
+
+    @NotBlank
     private String name;
+
+    @NotNull
+    @Positive
     private BigDecimal incomeAmount;
     private LocalDate incomeDate;
 }
