@@ -39,18 +39,18 @@ Issues live in GitHub (`gh issue list`). Keep this section in sync.
 - #7 Expense service, DTOs, and controller
 - #8 Summary endpoint and math
 - #9 Decision: open design questions
+- #10 Validation: starter dependency and constraints
 
 ### Current issue
 
-- #10 Validation: starter dependency and constraints
+- #11 Consistent error handling
 
 ### Next issue
 
-- #11 Consistent error handling
+- #12 DTO and entity style consistency
 
 ### Remaining, in build order
 
-- #12 DTO and entity style consistency
 - #13 Tests
 
 ## Project notes
