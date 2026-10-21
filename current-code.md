@@ -229,6 +229,7 @@ package com.panda.expense_tracker_2.dto;
 
 import com.panda.expense_tracker_2.model.Category;
 import com.panda.expense_tracker_2.model.Logbook;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -237,6 +238,7 @@ import java.time.LocalDate;
 @Data
 public class ExpenseRequest {
     private String name;
+    @Positive
     private BigDecimal cost;
     private LocalDate date;
     private Long categoryId;
@@ -324,9 +326,12 @@ import com.panda.expense_tracker_2.model.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface CategoryRepository  extends JpaRepository<Category, Long> {
     public List<Category> findByActiveTrue();
+
+    public Optional<Category> findByNameIgnoreCase(String name);
 }
 ```
 
@@ -381,19 +386,35 @@ import com.panda.expense_tracker_2.dto.CategoryResponse;
 import com.panda.expense_tracker_2.model.Category;
 import com.panda.expense_tracker_2.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
 
 @Service
 @RequiredArgsConstructor
 public class CategoryService {
     final CategoryRepository categoryRepository;
 
-    public CategoryResponse createCategory(CategoryRequest request){
-        Category saved = categoryRepository.save(new Category(request.getName()));
-        return  new CategoryResponse(saved.getId(),saved.getName());
+    public CategoryResponse createCategory(CategoryRequest request) {
+        Optional<Category> existing = categoryRepository.findByNameIgnoreCase(request.getName());
+        Category saved = null;
+        if (existing.isEmpty()) {
+            saved = categoryRepository.save(new Category(request.getName()));
+        } else {
+            Category found = existing.get();
+            if (found.isActive()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Category already exists");
+            } else {
+                found.setActive(true);
+                saved = categoryRepository.save(found);
+            }
+        }
+        return new CategoryResponse(saved.getId(), saved.getName());
     }
 
     public List<CategoryResponse> listCategories(){
@@ -409,6 +430,8 @@ public class CategoryService {
         Category saved =  categoryRepository.save(found);
         return new CategoryResponse(saved.getId(), saved.getName());
     }
+
+
 
 
 }
@@ -841,6 +864,108 @@ public class LogbookController {
     @DeleteMapping("/logbooks/{id}")
     public ResponseEntity<LogbookResponse> deleteLogbook(@PathVariable Long id){
         return new ResponseEntity<LogbookResponse>(logbookService.deleteLogbook(id),
+                HttpStatus.OK);
+    }
+}
+```
+
+## SummaryResponse.java
+
+`src/main/java/com/panda/expense_tracker_2/dto/SummaryResponse.java`
+
+```java
+package com.panda.expense_tracker_2.dto;
+
+import lombok.Data;
+
+import java.math.BigDecimal;
+
+@Data
+public class SummaryResponse {
+    private BigDecimal totalExpenditure;
+    private BigDecimal income;
+    private BigDecimal difference;
+
+    public SummaryResponse(BigDecimal totalExpenditure,
+                           BigDecimal income,
+                           BigDecimal difference) {
+        this.difference = difference;
+        this.income = income;
+        this.totalExpenditure = totalExpenditure;
+    }
+}
+```
+
+## SummaryService.java
+
+`src/main/java/com/panda/expense_tracker_2/service/SummaryService.java`
+
+```java
+package com.panda.expense_tracker_2.service;
+
+import com.panda.expense_tracker_2.dto.ExpenseResponse;
+import com.panda.expense_tracker_2.dto.SummaryResponse;
+import com.panda.expense_tracker_2.model.Logbook;
+import com.panda.expense_tracker_2.repository.ExpenseRepository;
+import com.panda.expense_tracker_2.repository.IncomeRepository;
+import com.panda.expense_tracker_2.repository.LogbookRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.math.BigDecimal;
+
+@RequiredArgsConstructor
+@Service
+public class SummaryService {
+    private final IncomeRepository incomeRepository;
+    private final ExpenseRepository expenseRepository;
+    private final LogbookRepository logbookRepository;
+
+    public SummaryResponse summary(Long logbookId){
+         logbookRepository
+                .findById(logbookId)
+                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND,"Logbook not found"));
+
+        BigDecimal sum = expenseRepository.sumCostByLogbookId(logbookId);
+        BigDecimal income = incomeRepository.findByLogbookId(logbookId).get().getAmount();
+        BigDecimal difference = income.subtract(sum);
+
+        return new SummaryResponse(sum, income, difference);
+    }
+
+}
+```
+
+## SummaryController.java
+
+`src/main/java/com/panda/expense_tracker_2/controller/SummaryController.java`
+
+```java
+package com.panda.expense_tracker_2.controller;
+
+import com.panda.expense_tracker_2.dto.SummaryResponse;
+import com.panda.expense_tracker_2.service.SummaryService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
+
+@RequiredArgsConstructor
+@RestController
+public class SummaryController {
+    private final SummaryService summaryService;
+
+    @GetMapping("/logbooks/{logbookId}/summary")
+    public ResponseEntity<SummaryResponse> getSummary(
+            @PathVariable
+            Long logbookId
+    ){
+        return new ResponseEntity<SummaryResponse>(summaryService.summary(logbookId),
                 HttpStatus.OK);
     }
 }

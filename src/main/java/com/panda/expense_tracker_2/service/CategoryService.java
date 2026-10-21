@@ -5,9 +5,12 @@ import com.panda.expense_tracker_2.dto.CategoryResponse;
 import com.panda.expense_tracker_2.model.Category;
 import com.panda.expense_tracker_2.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -16,9 +19,21 @@ import java.util.stream.Collectors;
 public class CategoryService {
     final CategoryRepository categoryRepository;
 
-    public CategoryResponse createCategory(CategoryRequest request){
-        Category saved = categoryRepository.save(new Category(request.getName()));
-        return  new CategoryResponse(saved.getId(),saved.getName());
+    public CategoryResponse createCategory(CategoryRequest request) {
+        Optional<Category> existing = categoryRepository.findByNameIgnoreCase(request.getName());
+        Category saved = null;
+        if (existing.isEmpty()) {
+            saved = categoryRepository.save(new Category(request.getName()));
+        } else {
+            Category found = existing.get();
+            if (found.isActive()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Category already exists");
+            } else {
+                found.setActive(true);
+                saved = categoryRepository.save(found);
+            }
+        }
+        return new CategoryResponse(saved.getId(), saved.getName());
     }
 
     public List<CategoryResponse> listCategories(){
