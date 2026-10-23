@@ -1,11 +1,11 @@
 package com.panda.expense_tracker_2.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
+import lombok.Value;
 
-@Data
+@Value
 public class CategoryRequest {
 
     @NotBlank
-    private String name;
+    String name;
 }

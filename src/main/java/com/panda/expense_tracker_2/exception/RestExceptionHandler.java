@@ -1,5 +1,6 @@
 package com.panda.expense_tracker_2.exception;
 
+import com.panda.expense_tracker_2.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;

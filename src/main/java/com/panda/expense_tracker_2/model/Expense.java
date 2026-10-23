@@ -1,11 +1,15 @@
 package com.panda.expense_tracker_2.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "Expense")
 @NoArgsConstructor
@@ -31,30 +35,6 @@ public class Expense {
     @JoinColumn(name = "logbook_id")
     private Logbook logbook;
 
-
-    public Long getId() { return id; }
-
-    public void setId(Long id) { this.id = id; }
-
-    public String getName() { return name; }
-
-    public void setName(String name) { this.name = name; }
-
-    public BigDecimal getCost() { return cost; }
-
-    public void setCost(BigDecimal cost) { this.cost = cost; }
-
-    public LocalDate getDate() { return date; }
-
-    public void setDate(LocalDate date) { this.date = date; }
-
-    public Category getCategory() { return category; }
-
-    public void setCategory(Category category) { this.category = category; }
-
-    public Logbook getLogbook() { return logbook; }
-
-    public void setLogbook(Logbook logbook) { this.logbook = logbook; }
 
     public Expense(String name, BigDecimal cost, LocalDate date, Category category, Logbook logbook) {
         this.name = name;

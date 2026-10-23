@@ -1,11 +1,15 @@
 package com.panda.expense_tracker_2.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "Income")
 @NoArgsConstructor
@@ -23,31 +27,6 @@ public class Income {
     @OneToOne
     @JoinColumn(name = "logbook_id", nullable = false)
     private Logbook logbook;
-
-
-    public  LocalDate getDate() {
-        return date;
-    }
-
-    public void setDate(LocalDate date) {
-        this.date = date;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
-
-    public Long getId() { return id;}
-
-    public void setId(Long id) { this.id = id; }
-
-    public Logbook getLogbook() { return logbook; }
-
-    public void setLogbook(Logbook logbook) { this.logbook = logbook; }
 
     public Income(LocalDate date, BigDecimal amount, Logbook logbook) {
         this.date = date;

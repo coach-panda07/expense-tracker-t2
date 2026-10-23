@@ -1,24 +1,22 @@
 package com.panda.expense_tracker_2.dto;
 
-import com.panda.expense_tracker_2.model.Category;
-import com.panda.expense_tracker_2.model.Logbook;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import lombok.Data;
+import lombok.Value;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Data
+@Value
 public class ExpenseRequest {
     @NotBlank
-    private String name;
+    String name;
 
     @Positive
     @NotNull
-    private BigDecimal cost;
+    BigDecimal cost;
 
-    private LocalDate date;
-    private Long categoryId;
+    LocalDate date;
+    Long categoryId;
 }

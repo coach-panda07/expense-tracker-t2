@@ -1,8 +1,12 @@
 package com.panda.expense_tracker_2.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "Category")
 @NoArgsConstructor
@@ -14,13 +18,6 @@ public class Category {
     @Column(nullable = false)
     private String name;
 
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
 
     @Column
     private boolean active = true;
@@ -29,20 +26,4 @@ public class Category {
         this.name = name;
     }
 
-    public String getName() {
-        return name;
-    }
-
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
 }

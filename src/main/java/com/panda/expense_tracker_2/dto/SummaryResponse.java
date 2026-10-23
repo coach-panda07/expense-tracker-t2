@@ -1,20 +1,14 @@
 package com.panda.expense_tracker_2.dto;
 
-import lombok.Data;
+import lombok.Value;
 
 import java.math.BigDecimal;
 
-@Data
+@Value
 public class SummaryResponse {
-    private BigDecimal totalExpenditure;
-    private BigDecimal income;
-    private BigDecimal difference;
+    BigDecimal totalExpenditure;
+    BigDecimal income;
+    BigDecimal difference;
 
-    public SummaryResponse(BigDecimal totalExpenditure,
-                           BigDecimal income,
-                           BigDecimal difference) {
-        this.difference = difference;
-        this.income = income;
-        this.totalExpenditure = totalExpenditure;
-    }
+
 }
