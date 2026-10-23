@@ -2,12 +2,12 @@ package com.panda.expense_tracker_2.service;
 
 import com.panda.expense_tracker_2.dto.CategoryRequest;
 import com.panda.expense_tracker_2.dto.CategoryResponse;
+import com.panda.expense_tracker_2.exception.ConflictException;
+import com.panda.expense_tracker_2.exception.NotFoundException;
 import com.panda.expense_tracker_2.model.Category;
 import com.panda.expense_tracker_2.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +27,7 @@ public class CategoryService {
         } else {
             Category found = existing.get();
             if (found.isActive()) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Category already exists");
+                throw new ConflictException("Category already exists");
             } else {
                 found.setActive(true);
                 saved = categoryRepository.save(found);
@@ -44,7 +44,7 @@ public class CategoryService {
     }
 
     public CategoryResponse deleteCategory(Long id){
-        Category found = categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found."));
+        Category found = categoryRepository.findById(id).orElseThrow(() -> new NotFoundException("Category not found."));
         found.setActive(false);
         Category saved =  categoryRepository.save(found);
         return new CategoryResponse(saved.getId(), saved.getName());

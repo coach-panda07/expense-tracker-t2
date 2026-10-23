@@ -2,15 +2,14 @@ package com.panda.expense_tracker_2.service;
 
 import com.panda.expense_tracker_2.dto.LogbookRequest;
 import com.panda.expense_tracker_2.dto.LogbookResponse;
+import com.panda.expense_tracker_2.exception.NotFoundException;
 import com.panda.expense_tracker_2.model.Income;
 import com.panda.expense_tracker_2.model.Logbook;
 import com.panda.expense_tracker_2.repository.IncomeRepository;
 import com.panda.expense_tracker_2.repository.LogbookRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -31,7 +30,7 @@ public class LogbookService {
 
 
     public LogbookResponse deleteLogbook(Long id){
-        Logbook found = logbookRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Logbook not found "));
+    Logbook found = logbookRepository.findById(id).orElseThrow(() -> new NotFoundException("Logbook not found"));
         Income income = incomeRepository.findByLogbookId(id).orElse(null);
         logbookRepository.delete(found);
         return new LogbookResponse(found.getId(), found.getName(),
