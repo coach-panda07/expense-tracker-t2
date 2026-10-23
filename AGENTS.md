@@ -40,16 +40,13 @@ Issues live in GitHub (`gh issue list`). Keep this section in sync.
 - #8 Summary endpoint and math
 - #9 Decision: open design questions
 - #10 Validation: starter dependency and constraints
+- #11 Consistent error handling
 
 ### Current issue
 
-- #11 Consistent error handling
-
-### Next issue
-
 - #12 DTO and entity style consistency
 
-### Remaining, in build order
+### Next issue
 
 - #13 Tests
 
