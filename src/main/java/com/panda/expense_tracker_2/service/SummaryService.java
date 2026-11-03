@@ -23,7 +23,7 @@ public class SummaryService {
                 .orElseThrow(()-> new NotFoundException("Logbook not found"));
 
         BigDecimal sum = expenseRepository.sumCostByLogbookId(logbookId);
-        BigDecimal income = incomeRepository.findByLogbookId(logbookId).get().getAmount();
+        BigDecimal income = incomeRepository.findByLogbookId(logbookId).orElseThrow(()-> new NotFoundException("Income not found")).getAmount();
         BigDecimal difference = income.subtract(sum);
 
         return new SummaryResponse(sum, income, difference);

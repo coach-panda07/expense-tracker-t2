@@ -42,10 +42,15 @@ Issues live in GitHub (`gh issue list`). Keep this section in sync.
 - #10 Validation: starter dependency and constraints
 - #11 Consistent error handling
 - #12 DTO and entity style consistency
+- #14 V2-01 Fix summary when a logbook has no income
+
+### Skipped issues
+
+- #13 Tests (skipped by request, still open on GitHub)
 
 ### Current issue
 
-- #13 Tests
+- #15
 
 ## Project notes
 
