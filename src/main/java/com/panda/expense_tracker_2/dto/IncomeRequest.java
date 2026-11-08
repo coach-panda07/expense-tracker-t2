@@ -14,6 +14,7 @@ public class IncomeRequest {
     @Positive
     BigDecimal amount;
 
+    @NotNull
     LocalDate date;
 
 }

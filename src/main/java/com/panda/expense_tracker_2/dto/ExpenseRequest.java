@@ -17,6 +17,9 @@ public class ExpenseRequest {
     @NotNull
     BigDecimal cost;
 
+    @NotNull
     LocalDate date;
+
+    @NotNull
     Long categoryId;
 }

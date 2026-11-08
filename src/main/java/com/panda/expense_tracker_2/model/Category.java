@@ -19,7 +19,7 @@ public class Category {
     private String name;
 
 
-    @Column
+    @Column(nullable = false)
     private boolean active = true;
 
     public Category(String name) {
