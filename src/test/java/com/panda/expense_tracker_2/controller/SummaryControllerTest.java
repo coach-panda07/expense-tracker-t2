@@ -31,8 +31,28 @@ class SummaryControllerTest {
         mockMvc.perform(get("/logbooks/{logbookId}/summary", 1L))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Income not found"))
-                .andExpect(jsonPath("$.status").value("404 NOT_FOUND"))
+                .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.timestamp").exists());
 
+    }
+
+    @Test
+    void summaryWithInvalidLogbookIdReturns400() throws Exception {
+        mockMvc.perform(get("/logbooks/{logbookId}/summary", "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid value 'abc' for parameter 'logbookId'"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void summaryUnexpectedErrorReturns500() throws Exception {
+        when(summaryService.summary(1L))
+                .thenThrow(new RuntimeException("boom"));
+        mockMvc.perform(get("/logbooks/{logbookId}/summary", 1L))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message").value("An unexpected error occurred"))
+                .andExpect(jsonPath("$.status").value(500))
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 }

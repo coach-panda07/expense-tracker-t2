@@ -43,6 +43,8 @@ Issues live in GitHub (`gh issue list`). Keep this section in sync.
 - #11 Consistent error handling
 - #12 DTO and entity style consistency
 - #14 V2-01 Fix summary when a logbook has no income
+- #15 V2-02 Close validation gaps
+- #16 V2-03 Transactions and global exception handlers
 
 ### Skipped issues
 
@@ -50,7 +52,7 @@ Issues live in GitHub (`gh issue list`). Keep this section in sync.
 
 ### Current issue
 
-- #15
+- #17
 
 ## Project notes
 

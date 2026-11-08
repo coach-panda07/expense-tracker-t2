@@ -12,6 +12,7 @@ import com.panda.expense_tracker_2.repository.ExpenseRepository;
 import com.panda.expense_tracker_2.repository.LogbookRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -22,6 +23,7 @@ public class ExpenseService {
     private final LogbookRepository logbookRepository;
     private final CategoryRepository categoryRepository;
 
+    @Transactional
     public ExpenseResponse logExpense(Long logbookId, ExpenseRequest request) {
         Category categoryFound = categoryRepository.findById(request.getCategoryId()).orElseThrow(() -> new NotFoundException("category not found"));
         if (!categoryFound.isActive()) {
@@ -33,6 +35,7 @@ public class ExpenseService {
         return new ExpenseResponse(expense.getId(), expense.getName(), expense.getCost(), expense.getDate(), expense.getCategory().getId());
     }
 
+    @Transactional(readOnly = true)
     public List<ExpenseResponse> getExpenses(Long logbookId) {
         Logbook logbookFound = logbookRepository.findById(logbookId).orElseThrow(() -> new NotFoundException("Logbook not found"));
         return expenseRepository.findByLogbookId(logbookId).stream()
@@ -40,6 +43,7 @@ public class ExpenseService {
                 .toList();
     }
 
+    @Transactional
     public ExpenseResponse deleteExpense(Long expenseId) {
         Expense found = expenseRepository
                 .findById(expenseId)

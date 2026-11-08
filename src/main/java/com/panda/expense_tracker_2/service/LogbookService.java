@@ -7,9 +7,9 @@ import com.panda.expense_tracker_2.model.Income;
 import com.panda.expense_tracker_2.model.Logbook;
 import com.panda.expense_tracker_2.repository.IncomeRepository;
 import com.panda.expense_tracker_2.repository.LogbookRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -29,6 +29,7 @@ public class LogbookService {
     }
 
 
+    @Transactional
     public LogbookResponse deleteLogbook(Long id){
     Logbook found = logbookRepository.findById(id).orElseThrow(() -> new NotFoundException("Logbook not found"));
         Income income = incomeRepository.findByLogbookId(id).orElseThrow(() -> new NotFoundException("Income not found"));
@@ -38,6 +39,7 @@ public class LogbookService {
                 income == null ? null : income.getDate());
     }
 
+    @Transactional(readOnly = true)
     public List<LogbookResponse> listLogbooks() {
         return logbookRepository.findAll().stream().map(l -> {
             Income i = incomeRepository.findByLogbookId(l.getId()).orElse(null);

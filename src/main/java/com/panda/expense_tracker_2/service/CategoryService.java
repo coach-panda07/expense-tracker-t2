@@ -8,6 +8,7 @@ import com.panda.expense_tracker_2.model.Category;
 import com.panda.expense_tracker_2.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 public class CategoryService {
     final CategoryRepository categoryRepository;
 
+    @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
         Optional<Category> existing = categoryRepository.findByNameIgnoreCase(request.getName());
         Category saved = null;
@@ -36,6 +38,7 @@ public class CategoryService {
         return new CategoryResponse(saved.getId(), saved.getName());
     }
 
+    @Transactional(readOnly = true)
     public List<CategoryResponse> listCategories(){
         List<Category> categories = categoryRepository.findByActiveTrue();
         return categories.stream()
@@ -43,6 +46,7 @@ public class CategoryService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public CategoryResponse deleteCategory(Long id){
         Category found = categoryRepository.findById(id).orElseThrow(() -> new NotFoundException("Category not found."));
         found.setActive(false);

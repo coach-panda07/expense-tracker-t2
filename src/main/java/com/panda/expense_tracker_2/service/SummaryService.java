@@ -7,6 +7,7 @@ import com.panda.expense_tracker_2.repository.IncomeRepository;
 import com.panda.expense_tracker_2.repository.LogbookRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
@@ -17,6 +18,7 @@ public class SummaryService {
     private final ExpenseRepository expenseRepository;
     private final LogbookRepository logbookRepository;
 
+    @Transactional(readOnly = true)
     public SummaryResponse summary(Long logbookId){
          logbookRepository
                 .findById(logbookId)
