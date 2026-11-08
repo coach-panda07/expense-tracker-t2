@@ -40,4 +40,22 @@ class ExpenseControllerTest {
                 .andExpect(jsonPath("$.timestamp").exists());
 
     }
+
+    @Test
+    void ExpenseWithoutCategoryId() throws Exception {
+        mockMvc.perform(post("/logbooks/{logbookId}/expenses", 1L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                            "name": "Lunch",
+                            "cost": 12.58,
+                            "date": "2026-11-08"
+                        }
+                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("[categoryId: must not be null]"))
+                .andExpect(jsonPath("$.status").value("400 BAD_REQUEST"))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+    }
 }
