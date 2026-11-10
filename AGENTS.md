@@ -45,6 +45,7 @@ Issues live in GitHub (`gh issue list`). Keep this section in sync.
 - #14 V2-01 Fix summary when a logbook has no income
 - #15 V2-02 Close validation gaps
 - #16 V2-03 Transactions and global exception handlers
+- #17 V2-04 User entity and repository
 
 ### Skipped issues
 
@@ -52,7 +53,7 @@ Issues live in GitHub (`gh issue list`). Keep this section in sync.
 
 ### Current issue
 
-- #17
+- #18
 
 ## Project notes
 
