@@ -1,6 +1,5 @@
 package com.panda.expense_tracker_2.service;
 
-import com.panda.expense_tracker_2.dto.SummaryResponse;
 import com.panda.expense_tracker_2.exception.NotFoundException;
 import com.panda.expense_tracker_2.model.Logbook;
 import com.panda.expense_tracker_2.repository.ExpenseRepository;
