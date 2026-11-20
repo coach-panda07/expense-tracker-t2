@@ -578,6 +578,7 @@ import com.panda.expense_tracker_2.model.Category;
 import com.panda.expense_tracker_2.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -589,6 +590,7 @@ import java.util.stream.Collectors;
 public class CategoryService {
     final CategoryRepository categoryRepository;
 
+    @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
         Optional<Category> existing = categoryRepository.findByNameIgnoreCase(request.getName());
         Category saved = null;
@@ -606,6 +608,7 @@ public class CategoryService {
         return new CategoryResponse(saved.getId(), saved.getName());
     }
 
+    @Transactional(readOnly = true)
     public List<CategoryResponse> listCategories(){
         List<Category> categories = categoryRepository.findByActiveTrue();
         return categories.stream()
@@ -613,6 +616,7 @@ public class CategoryService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public CategoryResponse deleteCategory(Long id){
         Category found = categoryRepository.findById(id).orElseThrow(() -> new NotFoundException("Category not found."));
         found.setActive(false);
@@ -645,6 +649,7 @@ import com.panda.expense_tracker_2.repository.ExpenseRepository;
 import com.panda.expense_tracker_2.repository.LogbookRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -655,6 +660,7 @@ public class ExpenseService {
     private final LogbookRepository logbookRepository;
     private final CategoryRepository categoryRepository;
 
+    @Transactional
     public ExpenseResponse logExpense(Long logbookId, ExpenseRequest request) {
         Category categoryFound = categoryRepository.findById(request.getCategoryId()).orElseThrow(() -> new NotFoundException("category not found"));
         if (!categoryFound.isActive()) {
@@ -666,6 +672,7 @@ public class ExpenseService {
         return new ExpenseResponse(expense.getId(), expense.getName(), expense.getCost(), expense.getDate(), expense.getCategory().getId());
     }
 
+    @Transactional(readOnly = true)
     public List<ExpenseResponse> getExpenses(Long logbookId) {
         Logbook logbookFound = logbookRepository.findById(logbookId).orElseThrow(() -> new NotFoundException("Logbook not found"));
         return expenseRepository.findByLogbookId(logbookId).stream()
@@ -673,6 +680,7 @@ public class ExpenseService {
                 .toList();
     }
 
+    @Transactional
     public ExpenseResponse deleteExpense(Long expenseId) {
         Expense found = expenseRepository
                 .findById(expenseId)
@@ -699,9 +707,9 @@ import com.panda.expense_tracker_2.model.Income;
 import com.panda.expense_tracker_2.model.Logbook;
 import com.panda.expense_tracker_2.repository.IncomeRepository;
 import com.panda.expense_tracker_2.repository.LogbookRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -721,15 +729,17 @@ public class LogbookService {
     }
 
 
+    @Transactional
     public LogbookResponse deleteLogbook(Long id){
     Logbook found = logbookRepository.findById(id).orElseThrow(() -> new NotFoundException("Logbook not found"));
-        Income income = incomeRepository.findByLogbookId(id).orElse(null);
+        Income income = incomeRepository.findByLogbookId(id).orElseThrow(() -> new NotFoundException("Income not found"));
         logbookRepository.delete(found);
         return new LogbookResponse(found.getId(), found.getName(),
                 income == null ? null : income.getAmount(),
                 income == null ? null : income.getDate());
     }
 
+    @Transactional(readOnly = true)
     public List<LogbookResponse> listLogbooks() {
         return logbookRepository.findAll().stream().map(l -> {
             Income i = incomeRepository.findByLogbookId(l.getId()).orElse(null);
@@ -756,6 +766,7 @@ import com.panda.expense_tracker_2.repository.IncomeRepository;
 import com.panda.expense_tracker_2.repository.LogbookRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
@@ -766,13 +777,14 @@ public class SummaryService {
     private final ExpenseRepository expenseRepository;
     private final LogbookRepository logbookRepository;
 
+    @Transactional(readOnly = true)
     public SummaryResponse summary(Long logbookId){
          logbookRepository
                 .findById(logbookId)
                 .orElseThrow(()-> new NotFoundException("Logbook not found"));
 
         BigDecimal sum = expenseRepository.sumCostByLogbookId(logbookId);
-        BigDecimal income = incomeRepository.findByLogbookId(logbookId).get().getAmount();
+        BigDecimal income = incomeRepository.findByLogbookId(logbookId).orElseThrow(()-> new NotFoundException("Income not found")).getAmount();
         BigDecimal difference = income.subtract(sum);
 
         return new SummaryResponse(sum, income, difference);
