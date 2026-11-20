@@ -46,6 +46,7 @@ Issues live in GitHub (`gh issue list`). Keep this section in sync.
 - #15 V2-02 Close validation gaps
 - #16 V2-03 Transactions and global exception handlers
 - #17 V2-04 User entity and repository
+- #18 V2-05 Registration endpoint
 
 ### Skipped issues
 
@@ -53,7 +54,7 @@ Issues live in GitHub (`gh issue list`). Keep this section in sync.
 
 ### Current issue
 
-- #18
+- #19
 
 ## Project notes
 
