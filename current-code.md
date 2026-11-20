@@ -1040,6 +1040,190 @@ public interface UserRepository extends JpaRepository<User, Long> {
 }
 ```
 
+## UserRequest.java
+
+`src/main/java/com/panda/expense_tracker_2/dto/UserRequest.java`
+
+```java
+package com.panda.expense_tracker_2.dto;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Value;
+
+@Value
+public class UserRequest {
+    @Email
+    @NotBlank
+    private String email;
+
+    @NotBlank
+    @Size(min = 8)
+    private String password;
+}
+```
+
+## UserResponse.java
+
+`src/main/java/com/panda/expense_tracker_2/dto/UserResponse.java`
+
+```java
+package com.panda.expense_tracker_2.dto;
+
+import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotBlank;
+import lombok.Value;
+
+import java.time.LocalDateTime;
+
+@Value
+public class UserResponse {
+    @Id
+    private Long id;
+
+    @NotBlank
+    private String email;
+
+    private LocalDateTime createdAt;
+}
+```
+
+## ApplicationConfig.java
+
+`src/main/java/com/panda/expense_tracker_2/config/ApplicationConfig.java`
+
+```java
+package com.panda.expense_tracker_2.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+@Configuration
+public class ApplicationConfig {
+    @Bean
+    public PasswordEncoder passwordEncoder(){
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration){
+        return configuration.getAuthenticationManager();
+    }
+}
+```
+
+## SecurityConfig.java
+
+`src/main/java/com/panda/expense_tracker_2/config/SecurityConfig.java`
+
+```java
+package com.panda.expense_tracker_2.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+
+@EnableWebSecurity
+@Configuration
+public class SecurityConfig {
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
+        http
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/auth/**").permitAll()
+                        .anyRequest().authenticated())
+                .httpBasic(Customizer.withDefaults());
+        return http.build();
+    }
+}
+```
+
+## AuthService.java
+
+`src/main/java/com/panda/expense_tracker_2/service/AuthService.java`
+
+```java
+package com.panda.expense_tracker_2.service;
+
+import com.panda.expense_tracker_2.dto.UserRequest;
+import com.panda.expense_tracker_2.dto.UserResponse;
+import com.panda.expense_tracker_2.exception.ConflictException;
+import com.panda.expense_tracker_2.model.User;
+import com.panda.expense_tracker_2.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.Locale;
+import java.util.Optional;
+
+@Service
+@RequiredArgsConstructor
+public class AuthService {
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @Transactional
+    public UserResponse register(UserRequest request){
+        String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
+        Optional<User> exists = userRepository.findByEmail(email);
+        if (exists.isPresent()){
+            throw new ConflictException("email already exists");
+        }
+        String hash = passwordEncoder.encode(request.getPassword());
+
+        User user = userRepository.save(new User(email, LocalDateTime.now(), hash));
+
+        return new UserResponse(user.getId(), user.getEmail(), user.getCreatedAt());
+    }
+}
+```
+
+## AuthController.java
+
+`src/main/java/com/panda/expense_tracker_2/controller/AuthController.java`
+
+```java
+package com.panda.expense_tracker_2.controller;
+
+import com.panda.expense_tracker_2.dto.UserRequest;
+import com.panda.expense_tracker_2.dto.UserResponse;
+import com.panda.expense_tracker_2.service.AuthService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+@RequiredArgsConstructor
+@RestController
+public class AuthController {
+    private final AuthService authService;
+
+    @PostMapping("/auth/register")
+    public ResponseEntity<UserResponse> register(
+            @RequestBody
+            @Valid
+            UserRequest userRequest
+    ){
+        return new ResponseEntity<>(authService.register(userRequest), HttpStatus.CREATED);
+    }
+}
+```
+
 ## ExpenseTrackerT2Application.java
 
 `src/main/java/com/panda/expense_tracker_2/ExpenseTrackerT2Application.java`
@@ -1181,6 +1365,231 @@ public class AuthControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("email already exists"))
                 .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+}
+```
+
+## UserRepositoryTest.java
+
+`src/test/java/com/panda/expense_tracker_2/repository/UserRepositoryTest.java`
+
+```java
+package com.panda.expense_tracker_2.repository;
+
+import com.panda.expense_tracker_2.model.User;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.dao.DataIntegrityViolationException;
+
+import java.time.LocalDateTime;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+@DataJpaTest(properties = { "spring.jpa.hibernate.ddl-auto=create-drop", "spring.flyway.enabled=false" })
+public class UserRepositoryTest {
+
+    @Autowired
+    UserRepository userRepository;
+
+    @Test
+    void emailWithMoreThanOneEntries() {
+        User user = new User();
+        user.setEmail("a@b.com");
+        user.setCreatedAt(LocalDateTime.now());
+        user.setPasswordHash("hash1");
+        User saved = userRepository.saveAndFlush(user);
+
+        User user2 = new User();
+        user2.setEmail("a@b.com");
+        user2.setCreatedAt(LocalDateTime.now());
+        user2.setPasswordHash("blah");
+        assertThrows(DataIntegrityViolationException.class, () -> userRepository.saveAndFlush(user2));
+
+    }
+}
+```
+
+## SummaryServiceTest.java
+
+`src/test/java/com/panda/expense_tracker_2/service/SummaryServiceTest.java`
+
+```java
+package com.panda.expense_tracker_2.service;
+
+import com.panda.expense_tracker_2.exception.NotFoundException;
+import com.panda.expense_tracker_2.model.Logbook;
+import com.panda.expense_tracker_2.repository.ExpenseRepository;
+import com.panda.expense_tracker_2.repository.IncomeRepository;
+import com.panda.expense_tracker_2.repository.LogbookRepository;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+public class SummaryServiceTest {
+    @Mock
+    private LogbookRepository logbookRepository;
+    @Mock
+    private IncomeRepository incomeRepository;
+    @Mock
+    private ExpenseRepository expenseRepository;
+
+    @InjectMocks
+    private SummaryService summaryService;
+
+    @Test
+    void summaryThrowsNotFoundWhenLogbookHasNoIncome(){
+       when(logbookRepository.findById(1L)).thenReturn(Optional.of(new Logbook("Trip")));
+       when(expenseRepository.sumCostByLogbookId(1L)).thenReturn(BigDecimal.ZERO);
+       when(incomeRepository.findByLogbookId(1L)).thenReturn(Optional.empty());
+
+        NotFoundException ex = assertThrows(NotFoundException.class,
+                ()-> summaryService.summary(1L));
+
+        assertEquals("Income not found", ex.getMessage());
+    }
+
+}
+```
+
+## ExpenseControllerTest.java
+
+`src/test/java/com/panda/expense_tracker_2/controller/ExpenseControllerTest.java`
+
+```java
+package com.panda.expense_tracker_2.controller;
+
+import com.panda.expense_tracker_2.dto.ExpenseRequest;
+import com.panda.expense_tracker_2.service.ExpenseService;
+import org.springframework.http.MediaType;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(ExpenseController.class)
+@AutoConfigureMockMvc(addFilters = false)
+class ExpenseControllerTest {
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private ExpenseService expenseservice;
+
+    @Test
+    void ExpenseWithoutDate() throws Exception {
+        mockMvc.perform(post("/logbooks/{logbookId}/expenses", 1L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                            "name": "Lunch",
+                            "cost": 12.58,
+                            "categoryId": 1
+                        }
+                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("[date: must not be null]"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+    }
+
+    @Test
+    void ExpenseWithoutCategoryId() throws Exception {
+        mockMvc.perform(post("/logbooks/{logbookId}/expenses", 1L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                            "name": "Lunch",
+                            "cost": 12.58,
+                            "date": "2026-11-08"
+                        }
+                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("[categoryId: must not be null]"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+    }
+}
+```
+
+## SummaryControllerTest.java
+
+`src/test/java/com/panda/expense_tracker_2/controller/SummaryControllerTest.java`
+
+```java
+package com.panda.expense_tracker_2.controller;
+
+import com.panda.expense_tracker_2.exception.NotFoundException;
+import com.panda.expense_tracker_2.service.SummaryService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(SummaryController.class)
+@AutoConfigureMockMvc(addFilters = false)
+class SummaryControllerTest {
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private SummaryService summaryService;
+
+    @Test
+    void summaryForLogbookWithoutIncomeReturns404() throws Exception{
+        when(summaryService.summary(1L))
+                .thenThrow(new NotFoundException("Income not found"));
+        mockMvc.perform(get("/logbooks/{logbookId}/summary", 1L))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Income not found"))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+    }
+
+    @Test
+    void summaryWithInvalidLogbookIdReturns400() throws Exception {
+        mockMvc.perform(get("/logbooks/{logbookId}/summary", "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid value 'abc' for parameter 'logbookId'"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void summaryUnexpectedErrorReturns500() throws Exception {
+        when(summaryService.summary(1L))
+                .thenThrow(new RuntimeException("boom"));
+        mockMvc.perform(get("/logbooks/{logbookId}/summary", 1L))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message").value("An unexpected error occurred"))
+                .andExpect(jsonPath("$.status").value(500))
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 }
