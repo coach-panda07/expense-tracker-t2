@@ -61,3 +61,45 @@ Issues live in GitHub (`gh issue list`). Keep this section in sync.
 - Java / Spring Boot expense tracker, Maven, package root `com.panda.expense_tracker_2`.
 - See `current-code.md` for the code snapshot.
 - When you need to read my code, read it manually. Do not use grep, glob, or other automated tools to summarize files. Use the Read tool to open each file individually.
+- Run the build with `.\mvnw.cmd test`; `mvn` is not on PATH.
+
+## Service conventions
+
+- Every service method is `@Transactional`; read paths use `@Transactional(readOnly = true)`.
+- Money is `BigDecimal` (precision 12, scale 2). Failures are `NotFoundException` (404),
+  `BadRequestException` (400), or `ConflictException` (409), all rendered as `ErrorResponse`.
+- `AuthService.register`: normalize email with `trim().toLowerCase(Locale.ROOT)`, reject duplicates
+  with `ConflictException("email already exists")`, hash via `PasswordEncoder`, and translate
+  `DataIntegrityViolationException` from `save` into that same 409 conflict.
+- `LogbookService.createLogbook` requires both income amount and date. `deleteLogbook` requires the
+  logbook but treats a missing income as `null` (`orElse(null)`), and income/expenses are removed by
+  JPA cascade.
+- `ExpenseService` checks the category is active before logging an expense; `getExpenses` keeps the
+  logbook existence check but does not assign the lookup result to a variable.
+- `CategoryService.createCategory` trims the name, reactivates a soft-deleted category, and conflicts
+  on an active duplicate; deletion is soft (`active = false`).
+- `SummaryService` checks logbook existence, sums expenses with `COALESCE`, requires income, and
+  returns `income - totalExpenditure`.
+
+## Test conventions
+
+- Service unit tests use JUnit 5 + `MockitoExtension` with `@Mock` and `@InjectMocks`; verify the
+  captured arguments, not just the return value (see `AuthServiceTest`, `SummaryServiceTest`).
+- Controller tests use `@WebMvcTest` + `@MockitoBean` + `MockMvc`. Security filters are active in
+  the slice, so use `@WithMockUser` and `.with(csrf())` on POSTs. Do not reintroduce
+  `@AutoConfigureMockMvc(addFilters = false)`.
+- Repository constraints are covered with `@DataJpaTest` (`ddl-auto=create-drop`).
+- DTO validation without a controller is tested directly with
+  `Validation.buildDefaultValidatorFactory()` (see `RequestValidationTest`).
+- Assert the `ErrorResponse` shape (`message`, numeric `status`, `timestamp`) and keep the exact
+  messages already used: `Malformed JSON`, `Method not allowed`, `No endpoint found`,
+  `An unexpected error occurred`, `Invalid value '...' for parameter '...'`, and
+  `[field: message]` for bean validation.
+- Name tests as action + outcome (e.g. `registerReturns201OnSuccess`), not `SuccessThrows201`.
+- Keep all 21 tests passing, and sync `current-code.md` in the same commit as any source change.
+
+## Design constraints from the issue tracker
+
+- Every Logbook and Category has an owner; users only see their own data.
+- Another user's record returns 404, never 403.
+- All errors use the existing `ErrorResponse` shape.
