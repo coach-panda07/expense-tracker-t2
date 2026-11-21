@@ -1,21 +1,22 @@
 package com.panda.expense_tracker_2.controller;
 
-import com.panda.expense_tracker_2.dto.ExpenseRequest;
+import com.panda.expense_tracker_2.config.SecurityConfig;
 import com.panda.expense_tracker_2.service.ExpenseService;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ExpenseController.class)
+@Import(SecurityConfig.class)
 @WithMockUser
 class ExpenseControllerTest {
     @Autowired
@@ -26,7 +27,7 @@ class ExpenseControllerTest {
 
     @Test
     void createExpenseWithoutDateReturns400() throws Exception {
-        mockMvc.perform(post("/logbooks/{logbookId}/expenses", 1L).with(csrf())
+        mockMvc.perform(post("/logbooks/{logbookId}/expenses", 1L)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
@@ -44,7 +45,7 @@ class ExpenseControllerTest {
 
     @Test
     void createExpenseWithoutCategoryIdReturns400() throws Exception {
-        mockMvc.perform(post("/logbooks/{logbookId}/expenses", 1L).with(csrf())
+        mockMvc.perform(post("/logbooks/{logbookId}/expenses", 1L)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {

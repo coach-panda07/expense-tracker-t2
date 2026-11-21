@@ -532,81 +532,98 @@ public class NotFoundException extends RuntimeException {
 ```java
 package com.panda.expense_tracker_2.exception;
 
-import com.panda.expense_tracker_2.dto.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 
 @Slf4j
 @RestControllerAdvice
-public class RestExceptionHandler {
+public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException ex) {
-        ErrorResponse body = new ErrorResponse(ex.getMessage(), HttpStatus.NOT_FOUND.value(),
-                LocalDateTime.now());
+    public ResponseEntity<com.panda.expense_tracker_2.dto.ErrorResponse> handleNotFound(NotFoundException ex) {
+        com.panda.expense_tracker_2.dto.ErrorResponse body =
+                new com.panda.expense_tracker_2.dto.ErrorResponse(ex.getMessage(),
+                        HttpStatus.NOT_FOUND.value(), LocalDateTime.now());
         return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ErrorResponse> handleBadRequest(BadRequestException ex) {
-        ErrorResponse body = new ErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST.value(),
-                LocalDateTime.now());
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
-    }
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
-        String message = ex.getBindingResult().getFieldErrors().stream().map(error -> error.getField() + ": " + error.getDefaultMessage()).toList().toString();
-        ErrorResponse body = new ErrorResponse(message, HttpStatus.BAD_REQUEST.value(), LocalDateTime.now());
+    public ResponseEntity<com.panda.expense_tracker_2.dto.ErrorResponse> handleBadRequest(BadRequestException ex) {
+        com.panda.expense_tracker_2.dto.ErrorResponse body =
+                new com.panda.expense_tracker_2.dto.ErrorResponse(ex.getMessage(),
+                        HttpStatus.BAD_REQUEST.value(), LocalDateTime.now());
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex){
-        ErrorResponse body = new ErrorResponse(ex.getMessage(), HttpStatus.CONFLICT.value(), LocalDateTime.now());
-        return  new ResponseEntity<>(body, HttpStatus.CONFLICT);
-    }
-
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        String message = "Invalid value '" + ex.getValue() + "' for parameter '" + ex.getName() + "'";
-        ErrorResponse body = new ErrorResponse(message, HttpStatus.BAD_REQUEST.value(), LocalDateTime.now());
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleMalformedJson(HttpMessageNotReadableException ex) {
-        ErrorResponse body = new ErrorResponse("Malformed JSON", HttpStatus.BAD_REQUEST.value(), LocalDateTime.now());
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ErrorResponse> handleWrongMethod(HttpRequestMethodNotSupportedException ex) {
-        ErrorResponse body = new ErrorResponse("Method not allowed", HttpStatus.METHOD_NOT_ALLOWED.value(), LocalDateTime.now());
-        return new ResponseEntity<>(body, HttpStatus.METHOD_NOT_ALLOWED);
-    }
-
-    @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
-    public ResponseEntity<ErrorResponse> handleUnknownPath(Exception ex) {
-        ErrorResponse body = new ErrorResponse("No endpoint found", HttpStatus.NOT_FOUND.value(), LocalDateTime.now());
-        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    public ResponseEntity<com.panda.expense_tracker_2.dto.ErrorResponse> handleConflict(ConflictException ex) {
+        com.panda.expense_tracker_2.dto.ErrorResponse body =
+                new com.panda.expense_tracker_2.dto.ErrorResponse(ex.getMessage(),
+                        HttpStatus.CONFLICT.value(), LocalDateTime.now());
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex) {
+    public ResponseEntity<com.panda.expense_tracker_2.dto.ErrorResponse> handleUnexpected(Exception ex) {
         log.error("Unhandled exception", ex);
-        ErrorResponse body = new ErrorResponse("An unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR.value(), LocalDateTime.now());
+        com.panda.expense_tracker_2.dto.ErrorResponse body =
+                new com.panda.expense_tracker_2.dto.ErrorResponse("An unexpected error occurred",
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(), LocalDateTime.now());
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
+                                                             HttpStatusCode statusCode, WebRequest request) {
+        com.panda.expense_tracker_2.dto.ErrorResponse error =
+                new com.panda.expense_tracker_2.dto.ErrorResponse(messageFor(ex), statusCode.value(),
+                        LocalDateTime.now());
+        return super.handleExceptionInternal(ex, error, headers, statusCode, request);
+    }
+
+    private String messageFor(Exception ex) {
+        if (ex instanceof MethodArgumentNotValidException validation) {
+            return validation.getBindingResult().getFieldErrors().stream()
+                    .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                    .toList()
+                    .toString();
+        }
+        if (ex instanceof MethodArgumentTypeMismatchException mismatch) {
+            return "Invalid value '" + mismatch.getValue() + "' for parameter '" + mismatch.getName() + "'";
+        }
+        if (ex instanceof HttpMessageNotReadableException) {
+            return "Malformed JSON";
+        }
+        if (ex instanceof HttpRequestMethodNotSupportedException) {
+            return "Method not allowed";
+        }
+        if (ex instanceof NoHandlerFoundException || ex instanceof NoResourceFoundException) {
+            return "No endpoint found";
+        }
+        if (ex instanceof HttpMediaTypeNotSupportedException) {
+            return "Unsupported media type";
+        }
+        if (ex instanceof MissingServletRequestParameterException missing) {
+            return "Missing required parameter '" + missing.getParameterName() + "'";
+        }
+        return ex.getMessage();
     }
 }
 ```
@@ -851,6 +868,7 @@ package com.panda.expense_tracker_2.service;
 
 import com.panda.expense_tracker_2.dto.UserRequest;
 import com.panda.expense_tracker_2.dto.UserResponse;
+import com.panda.expense_tracker_2.exception.BadRequestException;
 import com.panda.expense_tracker_2.exception.ConflictException;
 import com.panda.expense_tracker_2.model.User;
 import com.panda.expense_tracker_2.repository.UserRepository;
@@ -860,6 +878,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Optional;
@@ -867,26 +886,40 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+    private static final int BCRYPT_MAX_PASSWORD_BYTES = 72;
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public UserResponse register(UserRequest request){
+    public UserResponse register(UserRequest request) {
         String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
         Optional<User> exists = userRepository.findByEmail(email);
-        if (exists.isPresent()){
+        if (exists.isPresent()) {
             throw new ConflictException("email already exists");
+        }
+        if (passwordTooLong(request.getPassword())) {
+            throw new BadRequestException("password must be at most 72 bytes");
         }
         String hash = passwordEncoder.encode(request.getPassword());
 
         User user;
         try {
-            user = userRepository.save(new User(email, LocalDateTime.now(), hash));
+            user = userRepository.save(User.builder()
+                    .email(email)
+                    .passwordHash(hash)
+                    .createdAt(LocalDateTime.now())
+                    .build());
         } catch (DataIntegrityViolationException ex) {
             throw new ConflictException("email already exists");
         }
 
         return new UserResponse(user.getId(), user.getEmail(), user.getCreatedAt());
+    }
+
+    private boolean passwordTooLong(String password) {
+        return password != null
+                && password.getBytes(StandardCharsets.UTF_8).length > BCRYPT_MAX_PASSWORD_BYTES;
     }
 }
 ```
@@ -1052,7 +1085,6 @@ package com.panda.expense_tracker_2.controller;
 
 import com.panda.expense_tracker_2.dto.SummaryResponse;
 import com.panda.expense_tracker_2.service.SummaryService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -1118,6 +1150,7 @@ public class AuthController {
 package com.panda.expense_tracker_2.model;
 
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -1153,10 +1186,11 @@ public class User {
         }
     }
 
-    public User(String email, LocalDateTime createdAt, String passwordHash) {
+    @Builder
+    private User(String email, String passwordHash, LocalDateTime createdAt) {
         this.email = email;
-        this.createdAt = createdAt;
         this.passwordHash = passwordHash;
+        this.createdAt = createdAt;
     }
 }
 ```
@@ -1316,6 +1350,7 @@ class ExpenseTrackerT2ApplicationTests {
 ```java
 package com.panda.expense_tracker_2.controller;
 
+import com.panda.expense_tracker_2.config.SecurityConfig;
 import com.panda.expense_tracker_2.dto.UserRequest;
 import com.panda.expense_tracker_2.dto.UserResponse;
 import com.panda.expense_tracker_2.exception.ConflictException;
@@ -1323,6 +1358,7 @@ import com.panda.expense_tracker_2.service.AuthService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -1332,12 +1368,12 @@ import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AuthController.class)
+@Import(SecurityConfig.class)
 @WithMockUser
 public class AuthControllerTest {
     @Autowired
@@ -1347,49 +1383,49 @@ public class AuthControllerTest {
     private AuthService authService;
 
     @Test
-    void registerWithInvalidEmailReturns400() throws Exception{
-        mockMvc.perform(post("/auth/register").with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                        {
-                            "email": "blaj-jf",
-                            "password": "myuhsd@347"
-                        }
-                        """))
+    void registerWithInvalidEmailReturns400() throws Exception {
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "email": "blaj-jf",
+                                    "password": "myuhsd@347"
+                                }
+                                """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("[email: must be a well-formed email address]"))
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.timestamp").exists());
-
     }
 
     @Test
-    void registerWithWeakPasswordReturns400() throws Exception{
-        mockMvc.perform(post("/auth/register").with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                        {
-                            "email": "nlagiadk23@gmail.com",
-                            "password": "gs1"
-                            }
-                        """))
-                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").value("[password: size must be between 8 and 72]"))
+    void registerWithWeakPasswordReturns400() throws Exception {
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "email": "nlagiadk23@gmail.com",
+                                    "password": "gs1"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("[password: size must be between 8 and 72]"))
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 
     @Test
-    void registerReturns201OnSuccess() throws Exception{
+    void registerReturns201OnSuccess() throws Exception {
         when(authService.register(any(UserRequest.class)))
                 .thenReturn(new UserResponse(1L, "actuallu342@gmail.com", LocalDateTime.now()));
-        mockMvc.perform(post("/auth/register").with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                            {
-                                "email": "actuallu342@gmail.com",
-                                "password": "Kyfway#4567"
-                            }
-                        """))
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "email": "actuallu342@gmail.com",
+                                    "password": "Kyfway#4567"
+                                }
+                                """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.email").value("actuallu342@gmail.com"))
@@ -1398,7 +1434,7 @@ public class AuthControllerTest {
 
     @Test
     void malformedJsonReturns400() throws Exception {
-        mockMvc.perform(post("/auth/register").with(csrf())
+        mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{not json"))
                 .andExpect(status().isBadRequest())
@@ -1408,17 +1444,28 @@ public class AuthControllerTest {
     }
 
     @Test
-    void DuplicateEmailThrows409() throws Exception {
+    void registerWithUnsupportedMediaTypeReturns415() throws Exception {
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .content("{}"))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.message").value("Unsupported media type"))
+                .andExpect(jsonPath("$.status").value(415))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void duplicateEmailReturns409() throws Exception {
         when(authService.register(any(UserRequest.class)))
                 .thenThrow(new ConflictException("email already exists"));
-        mockMvc.perform(post("/auth/register").with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                            {
-                                "email": "actuallu342@gmail.com",
-                                "password": "Kyfway#4567"
-                            }
-                        """))
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "email": "actuallu342@gmail.com",
+                                    "password": "Kyfway#4567"
+                                }
+                                """))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("email already exists"))
                 .andExpect(jsonPath("$.status").value(409))
@@ -1528,6 +1575,7 @@ public class SummaryServiceTest {
 package com.panda.expense_tracker_2.service;
 
 import com.panda.expense_tracker_2.dto.UserRequest;
+import com.panda.expense_tracker_2.exception.BadRequestException;
 import com.panda.expense_tracker_2.exception.ConflictException;
 import com.panda.expense_tracker_2.model.User;
 import com.panda.expense_tracker_2.repository.UserRepository;
@@ -1589,9 +1637,13 @@ class AuthServiceTest {
     }
 
     @Test
-    void duplicateEmailThrowsConflictException() {
+    void duplicateEmailReturns409() {
         when(userRepository.findByEmail("test@example.com"))
-                .thenReturn(Optional.of(new User("test@example.com", LocalDateTime.now(), "hash")));
+                .thenReturn(Optional.of(User.builder()
+                        .email("test@example.com")
+                        .passwordHash("hash")
+                        .createdAt(LocalDateTime.now())
+                        .build()));
 
         ConflictException ex = assertThrows(ConflictException.class,
                 () -> authService.register(new UserRequest("test@example.com", "rawPassword1")));
@@ -1601,7 +1653,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void concurrentDuplicateThrowsConflictException() {
+    void concurrentDuplicateReturns409() {
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class)))
                 .thenThrow(new DataIntegrityViolationException("duplicate email"));
@@ -1610,6 +1662,18 @@ class AuthServiceTest {
                 () -> authService.register(new UserRequest("test@example.com", "rawPassword1")));
 
         assertEquals("email already exists", ex.getMessage());
+    }
+
+    @Test
+    void registerWithPasswordOver72BytesReturns400() {
+        String password = "€".repeat(25);
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
+
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> authService.register(new UserRequest("test@example.com", password)));
+
+        assertEquals("password must be at most 72 bytes", ex.getMessage());
+        verify(userRepository, never()).save(any(User.class));
     }
 }
 ```
@@ -1621,22 +1685,23 @@ class AuthServiceTest {
 ```java
 package com.panda.expense_tracker_2.controller;
 
-import com.panda.expense_tracker_2.dto.ExpenseRequest;
+import com.panda.expense_tracker_2.config.SecurityConfig;
 import com.panda.expense_tracker_2.service.ExpenseService;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ExpenseController.class)
+@Import(SecurityConfig.class)
 @WithMockUser
 class ExpenseControllerTest {
     @Autowired
@@ -1647,7 +1712,7 @@ class ExpenseControllerTest {
 
     @Test
     void createExpenseWithoutDateReturns400() throws Exception {
-        mockMvc.perform(post("/logbooks/{logbookId}/expenses", 1L).with(csrf())
+        mockMvc.perform(post("/logbooks/{logbookId}/expenses", 1L)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
@@ -1665,7 +1730,7 @@ class ExpenseControllerTest {
 
     @Test
     void createExpenseWithoutCategoryIdReturns400() throws Exception {
-        mockMvc.perform(post("/logbooks/{logbookId}/expenses", 1L).with(csrf())
+        mockMvc.perform(post("/logbooks/{logbookId}/expenses", 1L)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
@@ -1738,24 +1803,26 @@ class RequestValidationTest {
 ```java
 package com.panda.expense_tracker_2.controller;
 
+import com.panda.expense_tracker_2.config.SecurityConfig;
 import com.panda.expense_tracker_2.exception.NotFoundException;
 import com.panda.expense_tracker_2.service.SummaryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(SummaryController.class)
+@Import(SecurityConfig.class)
 @WithMockUser
 class SummaryControllerTest {
     @Autowired
@@ -1787,7 +1854,7 @@ class SummaryControllerTest {
 
     @Test
     void wrongMethodReturns405() throws Exception {
-        mockMvc.perform(post("/logbooks/{logbookId}/summary", 1L).with(csrf()))
+        mockMvc.perform(post("/logbooks/{logbookId}/summary", 1L))
                 .andExpect(status().isMethodNotAllowed())
                 .andExpect(jsonPath("$.message").value("Method not allowed"))
                 .andExpect(jsonPath("$.status").value(405))
@@ -1812,6 +1879,57 @@ class SummaryControllerTest {
                 .andExpect(jsonPath("$.message").value("An unexpected error occurred"))
                 .andExpect(jsonPath("$.status").value(500))
                 .andExpect(jsonPath("$.timestamp").exists());
+    }
+}
+```
+
+## LogbookServiceTest.java
+
+`src/test/java/com/panda/expense_tracker_2/service/LogbookServiceTest.java`
+
+```java
+package com.panda.expense_tracker_2.service;
+
+import com.panda.expense_tracker_2.dto.LogbookResponse;
+import com.panda.expense_tracker_2.model.Logbook;
+import com.panda.expense_tracker_2.repository.IncomeRepository;
+import com.panda.expense_tracker_2.repository.LogbookRepository;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class LogbookServiceTest {
+    @Mock
+    private LogbookRepository logbookRepository;
+    @Mock
+    private IncomeRepository incomeRepository;
+    @InjectMocks
+    private LogbookService logbookService;
+
+    @Test
+    void deleteLogbookWithoutIncomeReturnsNullIncomeFields() {
+        Logbook logbook = new Logbook("Trip");
+        logbook.setId(1L);
+        when(logbookRepository.findById(1L)).thenReturn(Optional.of(logbook));
+        when(incomeRepository.findByLogbookId(1L)).thenReturn(Optional.empty());
+
+        LogbookResponse response = logbookService.deleteLogbook(1L);
+
+        assertEquals(1L, response.getId());
+        assertEquals("Trip", response.getName());
+        assertNull(response.getIncomeAmount());
+        assertNull(response.getIncomeDate());
+        verify(logbookRepository).delete(logbook);
     }
 }
 ```

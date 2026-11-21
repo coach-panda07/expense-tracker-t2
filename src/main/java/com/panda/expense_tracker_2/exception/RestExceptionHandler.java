@@ -1,79 +1,96 @@
 package com.panda.expense_tracker_2.exception;
 
-import com.panda.expense_tracker_2.dto.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 
 @Slf4j
 @RestControllerAdvice
-public class RestExceptionHandler {
+public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException ex) {
-        ErrorResponse body = new ErrorResponse(ex.getMessage(), HttpStatus.NOT_FOUND.value(),
-                LocalDateTime.now());
+    public ResponseEntity<com.panda.expense_tracker_2.dto.ErrorResponse> handleNotFound(NotFoundException ex) {
+        com.panda.expense_tracker_2.dto.ErrorResponse body =
+                new com.panda.expense_tracker_2.dto.ErrorResponse(ex.getMessage(),
+                        HttpStatus.NOT_FOUND.value(), LocalDateTime.now());
         return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ErrorResponse> handleBadRequest(BadRequestException ex) {
-        ErrorResponse body = new ErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST.value(),
-                LocalDateTime.now());
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
-    }
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
-        String message = ex.getBindingResult().getFieldErrors().stream().map(error -> error.getField() + ": " + error.getDefaultMessage()).toList().toString();
-        ErrorResponse body = new ErrorResponse(message, HttpStatus.BAD_REQUEST.value(), LocalDateTime.now());
+    public ResponseEntity<com.panda.expense_tracker_2.dto.ErrorResponse> handleBadRequest(BadRequestException ex) {
+        com.panda.expense_tracker_2.dto.ErrorResponse body =
+                new com.panda.expense_tracker_2.dto.ErrorResponse(ex.getMessage(),
+                        HttpStatus.BAD_REQUEST.value(), LocalDateTime.now());
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex){
-        ErrorResponse body = new ErrorResponse(ex.getMessage(), HttpStatus.CONFLICT.value(), LocalDateTime.now());
-        return  new ResponseEntity<>(body, HttpStatus.CONFLICT);
-    }
-
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        String message = "Invalid value '" + ex.getValue() + "' for parameter '" + ex.getName() + "'";
-        ErrorResponse body = new ErrorResponse(message, HttpStatus.BAD_REQUEST.value(), LocalDateTime.now());
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleMalformedJson(HttpMessageNotReadableException ex) {
-        ErrorResponse body = new ErrorResponse("Malformed JSON", HttpStatus.BAD_REQUEST.value(), LocalDateTime.now());
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ErrorResponse> handleWrongMethod(HttpRequestMethodNotSupportedException ex) {
-        ErrorResponse body = new ErrorResponse("Method not allowed", HttpStatus.METHOD_NOT_ALLOWED.value(), LocalDateTime.now());
-        return new ResponseEntity<>(body, HttpStatus.METHOD_NOT_ALLOWED);
-    }
-
-    @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
-    public ResponseEntity<ErrorResponse> handleUnknownPath(Exception ex) {
-        ErrorResponse body = new ErrorResponse("No endpoint found", HttpStatus.NOT_FOUND.value(), LocalDateTime.now());
-        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    public ResponseEntity<com.panda.expense_tracker_2.dto.ErrorResponse> handleConflict(ConflictException ex) {
+        com.panda.expense_tracker_2.dto.ErrorResponse body =
+                new com.panda.expense_tracker_2.dto.ErrorResponse(ex.getMessage(),
+                        HttpStatus.CONFLICT.value(), LocalDateTime.now());
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex) {
+    public ResponseEntity<com.panda.expense_tracker_2.dto.ErrorResponse> handleUnexpected(Exception ex) {
         log.error("Unhandled exception", ex);
-        ErrorResponse body = new ErrorResponse("An unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR.value(), LocalDateTime.now());
+        com.panda.expense_tracker_2.dto.ErrorResponse body =
+                new com.panda.expense_tracker_2.dto.ErrorResponse("An unexpected error occurred",
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(), LocalDateTime.now());
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
+                                                             HttpStatusCode statusCode, WebRequest request) {
+        com.panda.expense_tracker_2.dto.ErrorResponse error =
+                new com.panda.expense_tracker_2.dto.ErrorResponse(messageFor(ex), statusCode.value(),
+                        LocalDateTime.now());
+        return super.handleExceptionInternal(ex, error, headers, statusCode, request);
+    }
+
+    private String messageFor(Exception ex) {
+        if (ex instanceof MethodArgumentNotValidException validation) {
+            return validation.getBindingResult().getFieldErrors().stream()
+                    .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                    .toList()
+                    .toString();
+        }
+        if (ex instanceof MethodArgumentTypeMismatchException mismatch) {
+            return "Invalid value '" + mismatch.getValue() + "' for parameter '" + mismatch.getName() + "'";
+        }
+        if (ex instanceof HttpMessageNotReadableException) {
+            return "Malformed JSON";
+        }
+        if (ex instanceof HttpRequestMethodNotSupportedException) {
+            return "Method not allowed";
+        }
+        if (ex instanceof NoHandlerFoundException || ex instanceof NoResourceFoundException) {
+            return "No endpoint found";
+        }
+        if (ex instanceof HttpMediaTypeNotSupportedException) {
+            return "Unsupported media type";
+        }
+        if (ex instanceof MissingServletRequestParameterException missing) {
+            return "Missing required parameter '" + missing.getParameterName() + "'";
+        }
+        return ex.getMessage();
     }
 }

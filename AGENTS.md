@@ -69,7 +69,8 @@ Issues live in GitHub (`gh issue list`). Keep this section in sync.
 - Money is `BigDecimal` (precision 12, scale 2). Failures are `NotFoundException` (404),
   `BadRequestException` (400), or `ConflictException` (409), all rendered as `ErrorResponse`.
 - `AuthService.register`: normalize email with `trim().toLowerCase(Locale.ROOT)`, reject duplicates
-  with `ConflictException("email already exists")`, hash via `PasswordEncoder`, and translate
+  with `ConflictException("email already exists")`, reject passwords over 72 UTF-8 bytes with
+  `BadRequestException("password must be at most 72 bytes")`, hash via `PasswordEncoder`, and translate
   `DataIntegrityViolationException` from `save` into that same 409 conflict.
 - `LogbookService.createLogbook` requires both income amount and date. `deleteLogbook` requires the
   logbook but treats a missing income as `null` (`orElse(null)`), and income/expenses are removed by
@@ -85,18 +86,18 @@ Issues live in GitHub (`gh issue list`). Keep this section in sync.
 
 - Service unit tests use JUnit 5 + `MockitoExtension` with `@Mock` and `@InjectMocks`; verify the
   captured arguments, not just the return value (see `AuthServiceTest`, `SummaryServiceTest`).
-- Controller tests use `@WebMvcTest` + `@MockitoBean` + `MockMvc`. Security filters are active in
-  the slice, so use `@WithMockUser` and `.with(csrf())` on POSTs. Do not reintroduce
+- Controller tests use `@WebMvcTest` + `@MockitoBean` + `MockMvc` + `@Import(SecurityConfig.class)`.
+  Security filters are active in the slice, so use `@WithMockUser`. Do not reintroduce
   `@AutoConfigureMockMvc(addFilters = false)`.
 - Repository constraints are covered with `@DataJpaTest` (`ddl-auto=create-drop`).
 - DTO validation without a controller is tested directly with
   `Validation.buildDefaultValidatorFactory()` (see `RequestValidationTest`).
 - Assert the `ErrorResponse` shape (`message`, numeric `status`, `timestamp`) and keep the exact
   messages already used: `Malformed JSON`, `Method not allowed`, `No endpoint found`,
-  `An unexpected error occurred`, `Invalid value '...' for parameter '...'`, and
-  `[field: message]` for bean validation.
+  `Unsupported media type`, `An unexpected error occurred`, `Invalid value '...' for parameter '...'`,
+  and `[field: message]` for bean validation.
 - Name tests as action + outcome (e.g. `registerReturns201OnSuccess`), not `SuccessThrows201`.
-- Keep all 21 tests passing, and sync `current-code.md` in the same commit as any source change.
+- Keep all 24 tests passing, and sync `current-code.md` in the same commit as any source change.
 
 ## Design constraints from the issue tracker
 

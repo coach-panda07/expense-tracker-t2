@@ -1,6 +1,7 @@
 package com.panda.expense_tracker_2.service;
 
 import com.panda.expense_tracker_2.dto.UserRequest;
+import com.panda.expense_tracker_2.exception.BadRequestException;
 import com.panda.expense_tracker_2.exception.ConflictException;
 import com.panda.expense_tracker_2.model.User;
 import com.panda.expense_tracker_2.repository.UserRepository;
@@ -62,9 +63,13 @@ class AuthServiceTest {
     }
 
     @Test
-    void duplicateEmailThrowsConflictException() {
+    void duplicateEmailReturns409() {
         when(userRepository.findByEmail("test@example.com"))
-                .thenReturn(Optional.of(new User("test@example.com", LocalDateTime.now(), "hash")));
+                .thenReturn(Optional.of(User.builder()
+                        .email("test@example.com")
+                        .passwordHash("hash")
+                        .createdAt(LocalDateTime.now())
+                        .build()));
 
         ConflictException ex = assertThrows(ConflictException.class,
                 () -> authService.register(new UserRequest("test@example.com", "rawPassword1")));
@@ -74,7 +79,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void concurrentDuplicateThrowsConflictException() {
+    void concurrentDuplicateReturns409() {
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class)))
                 .thenThrow(new DataIntegrityViolationException("duplicate email"));
@@ -83,5 +88,17 @@ class AuthServiceTest {
                 () -> authService.register(new UserRequest("test@example.com", "rawPassword1")));
 
         assertEquals("email already exists", ex.getMessage());
+    }
+
+    @Test
+    void registerWithPasswordOver72BytesReturns400() {
+        String password = "€".repeat(25);
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
+
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> authService.register(new UserRequest("test@example.com", password)));
+
+        assertEquals("password must be at most 72 bytes", ex.getMessage());
+        verify(userRepository, never()).save(any(User.class));
     }
 }

@@ -1,6 +1,7 @@
 package com.panda.expense_tracker_2.model;
 
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -36,9 +37,10 @@ public class User {
         }
     }
 
-    public User(String email, LocalDateTime createdAt, String passwordHash) {
+    @Builder
+    private User(String email, String passwordHash, LocalDateTime createdAt) {
         this.email = email;
-        this.createdAt = createdAt;
         this.passwordHash = passwordHash;
+        this.createdAt = createdAt;
     }
 }

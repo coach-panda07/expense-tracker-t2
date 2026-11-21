@@ -1,23 +1,25 @@
 package com.panda.expense_tracker_2.controller;
 
+import com.panda.expense_tracker_2.config.SecurityConfig;
 import com.panda.expense_tracker_2.exception.NotFoundException;
 import com.panda.expense_tracker_2.service.SummaryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(SummaryController.class)
+@Import(SecurityConfig.class)
 @WithMockUser
 class SummaryControllerTest {
     @Autowired
@@ -49,7 +51,7 @@ class SummaryControllerTest {
 
     @Test
     void wrongMethodReturns405() throws Exception {
-        mockMvc.perform(post("/logbooks/{logbookId}/summary", 1L).with(csrf()))
+        mockMvc.perform(post("/logbooks/{logbookId}/summary", 1L))
                 .andExpect(status().isMethodNotAllowed())
                 .andExpect(jsonPath("$.message").value("Method not allowed"))
                 .andExpect(jsonPath("$.status").value(405))

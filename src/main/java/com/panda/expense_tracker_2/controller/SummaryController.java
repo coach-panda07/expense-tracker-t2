@@ -2,7 +2,6 @@ package com.panda.expense_tracker_2.controller;
 
 import com.panda.expense_tracker_2.dto.SummaryResponse;
 import com.panda.expense_tracker_2.service.SummaryService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
