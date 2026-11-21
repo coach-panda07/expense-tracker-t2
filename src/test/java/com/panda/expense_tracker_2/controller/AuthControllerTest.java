@@ -6,9 +6,9 @@ import com.panda.expense_tracker_2.exception.ConflictException;
 import com.panda.expense_tracker_2.service.AuthService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -16,12 +16,13 @@ import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AuthController.class)
-@AutoConfigureMockMvc(addFilters = false)
+@WithMockUser
 public class AuthControllerTest {
     @Autowired
     private MockMvc mockMvc;
@@ -30,8 +31,8 @@ public class AuthControllerTest {
     private AuthService authService;
 
     @Test
-    void InvalidEmail() throws Exception{
-        mockMvc.perform(post("/auth/register")
+    void registerWithInvalidEmailReturns400() throws Exception{
+        mockMvc.perform(post("/auth/register").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
@@ -47,8 +48,8 @@ public class AuthControllerTest {
     }
 
     @Test
-    void WeakPasswordThrows400() throws Exception{
-        mockMvc.perform(post("/auth/register")
+    void registerWithWeakPasswordReturns400() throws Exception{
+        mockMvc.perform(post("/auth/register").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
@@ -56,16 +57,16 @@ public class AuthControllerTest {
                             "password": "gs1"
                             }
                         """))
-                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").value("[password: size must be between 8 and 2147483647]"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").value("[password: size must be between 8 and 72]"))
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 
     @Test
-    void SuccessThrows201() throws Exception{
+    void registerReturns201OnSuccess() throws Exception{
         when(authService.register(any(UserRequest.class)))
                 .thenReturn(new UserResponse(1L, "actuallu342@gmail.com", LocalDateTime.now()));
-        mockMvc.perform(post("/auth/register")
+        mockMvc.perform(post("/auth/register").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {
@@ -80,10 +81,21 @@ public class AuthControllerTest {
     }
 
     @Test
+    void malformedJsonReturns400() throws Exception {
+        mockMvc.perform(post("/auth/register").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{not json"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Malformed JSON"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
     void DuplicateEmailThrows409() throws Exception {
         when(authService.register(any(UserRequest.class)))
                 .thenThrow(new ConflictException("email already exists"));
-        mockMvc.perform(post("/auth/register")
+        mockMvc.perform(post("/auth/register").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {

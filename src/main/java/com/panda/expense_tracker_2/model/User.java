@@ -16,16 +16,16 @@ import java.util.Locale;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    private Long id;
 
     @Column(nullable = false, unique = true)
-    String email;
+    private String email;
 
     @Column(nullable = false)
-    String passwordHash;
+    private String passwordHash;
 
     @Column(nullable = false)
-    LocalDateTime createdAt;
+    private LocalDateTime createdAt;
 
 
     @PrePersist

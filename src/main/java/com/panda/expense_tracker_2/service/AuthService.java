@@ -6,6 +6,7 @@ import com.panda.expense_tracker_2.exception.ConflictException;
 import com.panda.expense_tracker_2.model.User;
 import com.panda.expense_tracker_2.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,12 @@ public class AuthService {
         }
         String hash = passwordEncoder.encode(request.getPassword());
 
-        User user = userRepository.save(new User(email, LocalDateTime.now(), hash));
+        User user;
+        try {
+            user = userRepository.save(new User(email, LocalDateTime.now(), hash));
+        } catch (DataIntegrityViolationException ex) {
+            throw new ConflictException("email already exists");
+        }
 
         return new UserResponse(user.getId(), user.getEmail(), user.getCreatedAt());
     }

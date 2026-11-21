@@ -4,7 +4,6 @@ import com.panda.expense_tracker_2.dto.ExpenseRequest;
 import com.panda.expense_tracker_2.dto.ExpenseResponse;
 import com.panda.expense_tracker_2.service.ExpenseService;
 import jakarta.validation.Valid;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +22,6 @@ public class ExpenseController {
             @RequestBody
             ExpenseRequest request,
 
-            @Valid
             @PathVariable
             Long logbookId
     ){
@@ -34,7 +32,6 @@ public class ExpenseController {
 
     @GetMapping("/logbooks/{logbookId}/expenses")
     public ResponseEntity<List<ExpenseResponse>> getExpenses(
-            @Valid
             @PathVariable
             Long logbookId
     ){
@@ -44,7 +41,6 @@ public class ExpenseController {
 
     @DeleteMapping("/expenses/{id}")
     public ResponseEntity<ExpenseResponse> deleteExpense(
-            @Valid
             @PathVariable
             Long id
     ){

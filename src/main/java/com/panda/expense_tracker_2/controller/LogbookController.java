@@ -1,7 +1,5 @@
 package com.panda.expense_tracker_2.controller;
 
-import com.panda.expense_tracker_2.dto.CategoryRequest;
-import com.panda.expense_tracker_2.dto.CategoryResponse;
 import com.panda.expense_tracker_2.dto.LogbookRequest;
 import com.panda.expense_tracker_2.dto.LogbookResponse;
 import com.panda.expense_tracker_2.service.LogbookService;

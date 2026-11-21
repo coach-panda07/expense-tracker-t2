@@ -37,7 +37,7 @@ public class ExpenseService {
 
     @Transactional(readOnly = true)
     public List<ExpenseResponse> getExpenses(Long logbookId) {
-        Logbook logbookFound = logbookRepository.findById(logbookId).orElseThrow(() -> new NotFoundException("Logbook not found"));
+        logbookRepository.findById(logbookId).orElseThrow(() -> new NotFoundException("Logbook not found"));
         return expenseRepository.findByLogbookId(logbookId).stream()
                 .map(e -> new ExpenseResponse(e.getId(), e.getName(), e.getCost(), e.getDate(), e.getCategory().getId()))
                 .toList();

@@ -32,7 +32,7 @@ public class LogbookService {
     @Transactional
     public LogbookResponse deleteLogbook(Long id){
     Logbook found = logbookRepository.findById(id).orElseThrow(() -> new NotFoundException("Logbook not found"));
-        Income income = incomeRepository.findByLogbookId(id).orElseThrow(() -> new NotFoundException("Income not found"));
+        Income income = incomeRepository.findByLogbookId(id).orElse(null);
         logbookRepository.delete(found);
         return new LogbookResponse(found.getId(), found.getName(),
                 income == null ? null : income.getAmount(),

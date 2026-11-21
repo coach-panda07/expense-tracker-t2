@@ -5,8 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Value;
 
-import java.time.LocalDateTime;
-
 @Value
 public class UserRequest {
 
@@ -15,7 +13,7 @@ public class UserRequest {
     private String email;
 
     @NotBlank
-    @Size(min = 8)
+    @Size(min = 8, max = 72)
     private String password;
 
 

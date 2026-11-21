@@ -25,7 +25,7 @@ public class Logbook {
     private Income income;
 
     @OneToMany(mappedBy = "logbook", cascade = CascadeType.REMOVE)
-    private List<Expense> expense;
+    private List<Expense> expenses;
 
     public Logbook(String name) {
         this.name = name;

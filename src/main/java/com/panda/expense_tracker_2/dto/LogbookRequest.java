@@ -17,5 +17,7 @@ public class LogbookRequest {
     @NotNull
     @Positive
     BigDecimal incomeAmount;
+
+    @NotNull
     LocalDate incomeDate;
 }

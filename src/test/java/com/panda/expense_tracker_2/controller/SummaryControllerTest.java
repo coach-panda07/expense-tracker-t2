@@ -4,19 +4,21 @@ import com.panda.expense_tracker_2.exception.NotFoundException;
 import com.panda.expense_tracker_2.service.SummaryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(SummaryController.class)
-@AutoConfigureMockMvc(addFilters = false)
+@WithMockUser
 class SummaryControllerTest {
     @Autowired
     private MockMvc mockMvc;
@@ -42,6 +44,24 @@ class SummaryControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Invalid value 'abc' for parameter 'logbookId'"))
                 .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void wrongMethodReturns405() throws Exception {
+        mockMvc.perform(post("/logbooks/{logbookId}/summary", 1L).with(csrf()))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.message").value("Method not allowed"))
+                .andExpect(jsonPath("$.status").value(405))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void unknownPathReturns404() throws Exception {
+        mockMvc.perform(get("/no-such-path"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("No endpoint found"))
+                .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 

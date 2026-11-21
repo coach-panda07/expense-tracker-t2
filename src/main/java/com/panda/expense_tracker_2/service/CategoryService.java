@@ -22,10 +22,11 @@ public class CategoryService {
 
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
-        Optional<Category> existing = categoryRepository.findByNameIgnoreCase(request.getName());
+        String name = request.getName().trim();
+        Optional<Category> existing = categoryRepository.findByNameIgnoreCase(name);
         Category saved = null;
         if (existing.isEmpty()) {
-            saved = categoryRepository.save(new Category(request.getName()));
+            saved = categoryRepository.save(new Category(name));
         } else {
             Category found = existing.get();
             if (found.isActive()) {

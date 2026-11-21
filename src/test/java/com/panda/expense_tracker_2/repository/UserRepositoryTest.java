@@ -17,12 +17,12 @@ public class UserRepositoryTest {
     UserRepository userRepository;
 
     @Test
-    void emailWithMoreThanOneEntries() {
+    void duplicateEmailIsRejected() {
         User user = new User();
         user.setEmail("a@b.com");
         user.setCreatedAt(LocalDateTime.now());
         user.setPasswordHash("hash1");
-        User saved = userRepository.saveAndFlush(user);
+        userRepository.saveAndFlush(user);
 
         User user2 = new User();
         user2.setEmail("a@b.com");
