@@ -23,6 +23,10 @@
    file one by one with the Read tool rather than relying on glob/grep summaries.
    Never use `current-code.md` as a source of truth — it can be stale. Always read the
    actual source files on disk.
+7. **Cross-check structure, not just behaviour.** When checking issue progress, compare
+   the file/class/package structure implied by the issue against the actual files on
+   disk and report missing or misplaced files; a working function or endpoint is not
+   enough.
 
 ## Issue tracker
 

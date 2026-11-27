@@ -233,6 +233,48 @@ public class ErrorResponse {
 }
 ```
 
+## LoginRequest.java
+
+`src/main/java/com/panda/expense_tracker_2/dto/LoginRequest.java`
+
+```java
+package com.panda.expense_tracker_2.dto;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Value;
+
+@Value
+public class LoginRequest {
+
+    @Email
+    @NotBlank
+    private String email;
+
+    @NotBlank
+    @Size(min = 8, max = 72)
+    private String password;
+}
+```
+
+## LoginResponse.java
+
+`src/main/java/com/panda/expense_tracker_2/dto/LoginResponse.java`
+
+```java
+package com.panda.expense_tracker_2.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Value;
+
+@Value
+public class LoginResponse {
+    @NotBlank
+    private String accessToken;
+}
+```
+
 ## ExpenseRequest.java
 
 `src/main/java/com/panda/expense_tracker_2/dto/ExpenseRequest.java`
@@ -525,6 +567,18 @@ public class NotFoundException extends RuntimeException {
 }
 ```
 
+## UnauthorizedException.java
+
+`src/main/java/com/panda/expense_tracker_2/exception/UnauthorizedException.java`
+
+```java
+package com.panda.expense_tracker_2.exception;
+
+public class UnauthorizedException extends RuntimeException{
+    public UnauthorizedException(String message){ super(message); }
+}
+```
+
 ## RestExceptionHandler.java
 
 `src/main/java/com/panda/expense_tracker_2/exception/RestExceptionHandler.java`
@@ -532,6 +586,7 @@ public class NotFoundException extends RuntimeException {
 ```java
 package com.panda.expense_tracker_2.exception;
 
+import com.panda.expense_tracker_2.dto.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -578,6 +633,13 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
                 new com.panda.expense_tracker_2.dto.ErrorResponse(ex.getMessage(),
                         HttpStatus.CONFLICT.value(), LocalDateTime.now());
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedException(UnauthorizedException ex) {
+        ErrorResponse body = new ErrorResponse(ex.getMessage(),
+                HttpStatus.UNAUTHORIZED.value(), LocalDateTime.now());
+        return new ResponseEntity<>(body, HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(Exception.class)
@@ -866,17 +928,23 @@ public class SummaryService {
 ```java
 package com.panda.expense_tracker_2.service;
 
+import com.panda.expense_tracker_2.dto.LoginRequest;
+import com.panda.expense_tracker_2.dto.LoginResponse;
 import com.panda.expense_tracker_2.dto.UserRequest;
 import com.panda.expense_tracker_2.dto.UserResponse;
 import com.panda.expense_tracker_2.exception.BadRequestException;
 import com.panda.expense_tracker_2.exception.ConflictException;
+import com.panda.expense_tracker_2.exception.NotFoundException;
+import com.panda.expense_tracker_2.exception.UnauthorizedException;
 import com.panda.expense_tracker_2.model.User;
 import com.panda.expense_tracker_2.repository.UserRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -890,6 +958,8 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private String cachedDHash;
 
     @Transactional
     public UserResponse register(UserRequest request) {
@@ -920,6 +990,27 @@ public class AuthService {
     private boolean passwordTooLong(String password) {
         return password != null
                 && password.getBytes(StandardCharsets.UTF_8).length > BCRYPT_MAX_PASSWORD_BYTES;
+    }
+
+    @Transactional(readOnly = true)
+    public LoginResponse login(LoginRequest request){
+        String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
+        User exists = userRepository.findByEmail(email).orElseThrow(() ->{
+                passwordEncoder.matches(request.getPassword(), dummyHash());
+                return new UnauthorizedException("Invalid password or email");});
+        if (!passwordEncoder.matches(request.getPassword(), exists.getPasswordHash())) {
+            throw  new UnauthorizedException("Invalid password or email");
+        }
+        return new LoginResponse(jwtService.generateToken(email));
+    }
+
+    @PostConstruct
+    void DummyHash(){
+        this.cachedDHash = passwordEncoder.encode("uhuyfbyhrigefogdvvgffeuaaj");
+    }
+
+    public String dummyHash(){
+        return cachedDHash;
     }
 }
 ```
@@ -1115,6 +1206,8 @@ public class SummaryController {
 ```java
 package com.panda.expense_tracker_2.controller;
 
+import com.panda.expense_tracker_2.dto.LoginRequest;
+import com.panda.expense_tracker_2.dto.LoginResponse;
 import com.panda.expense_tracker_2.dto.UserRequest;
 import com.panda.expense_tracker_2.dto.UserResponse;
 import com.panda.expense_tracker_2.service.AuthService;
@@ -1139,6 +1232,16 @@ public class AuthController {
     ){
         return new ResponseEntity<>(authService.register(userRequest), HttpStatus.CREATED);
     }
+
+    @PostMapping("/auth/login")
+    public ResponseEntity<LoginResponse> login(
+            @RequestBody
+            @Valid
+            LoginRequest loginRequest
+    ){
+        return new ResponseEntity<>(authService.login(loginRequest), HttpStatus.OK);
+    }
+
 }
 ```
 
@@ -1157,6 +1260,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.Locale;
+import java.util.Optional;
 
 @Setter
 @Getter
@@ -1176,6 +1280,9 @@ public class User {
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
+
+    public User(Optional<User> byEmail) {
+    }
 
 
     @PrePersist
@@ -1310,6 +1417,7 @@ public class SecurityConfig {
 ```java
 package com.panda.expense_tracker_2;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -1317,6 +1425,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class ExpenseTrackerT2Application {
 
     public static void main(String[] args) {
+        Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
+        String secret = dotenv.get("JWT_SECRET");
+        if (secret != null){
+            System.setProperty("JWT_SECRET", secret);
+        }
         SpringApplication.run(ExpenseTrackerT2Application.class, args);
     }
 
@@ -1961,4 +2074,72 @@ class LogbookServiceTest {
             <artifactId>dotenv-java</artifactId>
             <version>3.2.0</version>
         </dependency>
+```
+
+## JwtService.java
+
+`src/main/java/com/panda/expense_tracker_2/service/JwtService.java`
+
+```java
+package com.panda.expense_tracker_2.service;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Service;
+
+import javax.crypto.SecretKey;
+import java.util.Date;
+
+@Service
+public class JwtService {
+    private final SecretKey key;
+    private final long expiryMinutes;
+
+    public JwtService(@Value("${jwt.secret}") String base64Secret, @Value("${jwt.expiryMinutes}") long expiryMinutes){
+        this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(base64Secret));
+        this.expiryMinutes =expiryMinutes;
+    }
+
+    public String generateToken(String username) {
+        Date now = new Date();
+        return Jwts.builder()
+                .subject(username)
+                .issuedAt(now)
+                .expiration(new Date(now.getTime() + (expiryMinutes * 60000)))
+                .signWith(key)
+                .compact();
+    }
+
+    public Claims parseClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    public String extractUsername(String token) {
+        return parseClaims(token).getSubject();
+    }
+
+    public boolean isTokenValid(String token, UserDetails userDetails) {
+        Claims claims = parseClaims(token);
+        return claims.getSubject().equals(userDetails.getUsername())
+                && claims.getExpiration().after(new Date());
+    }
+}
+```
+
+## application.properties
+
+`src/main/resources/application.properties`
+
+```properties
+spring.application.name=Expense Tracker T2
+jwt.expiryMinutes = 15
+jwt.secret=${JWT_SECRET}
 ```

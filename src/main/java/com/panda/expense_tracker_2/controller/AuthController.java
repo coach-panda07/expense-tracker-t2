@@ -1,5 +1,7 @@
 package com.panda.expense_tracker_2.controller;
 
+import com.panda.expense_tracker_2.dto.LoginRequest;
+import com.panda.expense_tracker_2.dto.LoginResponse;
 import com.panda.expense_tracker_2.dto.UserRequest;
 import com.panda.expense_tracker_2.dto.UserResponse;
 import com.panda.expense_tracker_2.service.AuthService;
@@ -24,4 +26,14 @@ public class AuthController {
     ){
         return new ResponseEntity<>(authService.register(userRequest), HttpStatus.CREATED);
     }
+
+    @PostMapping("/auth/login")
+    public ResponseEntity<LoginResponse> login(
+            @RequestBody
+            @Valid
+            LoginRequest loginRequest
+    ){
+        return new ResponseEntity<>(authService.login(loginRequest), HttpStatus.OK);
+    }
+
 }

@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.Locale;
+import java.util.Optional;
 
 @Setter
 @Getter
@@ -27,6 +28,9 @@ public class User {
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
+
+    public User(Optional<User> byEmail) {
+    }
 
 
     @PrePersist

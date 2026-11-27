@@ -1,5 +1,6 @@
 package com.panda.expense_tracker_2.exception;
 
+import com.panda.expense_tracker_2.dto.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -46,6 +47,13 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
                 new com.panda.expense_tracker_2.dto.ErrorResponse(ex.getMessage(),
                         HttpStatus.CONFLICT.value(), LocalDateTime.now());
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedException(UnauthorizedException ex) {
+        ErrorResponse body = new ErrorResponse(ex.getMessage(),
+                HttpStatus.UNAUTHORIZED.value(), LocalDateTime.now());
+        return new ResponseEntity<>(body, HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(Exception.class)
